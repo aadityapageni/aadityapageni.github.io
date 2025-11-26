@@ -9,13 +9,13 @@ footer = false
 
 # If you don't want to display id/bio/avatar, simply comment out that line
 name = "Aaditya Pageni"
-<!-- id = "apageni" -->
-<!-- bio = "dog person, killer" -->
-<!-- avatar = "img/avatar.webp" -->
+# id = "apageni"
+# bio = "dog person, killer"
+# avatar = "img/avatar.webp"
 links = [
     { name = "GitHub", icon = "github", url = "https://github.com/aadityapageni" },
-    <!-- { name = "Twitter", icon = "twitter", url = "https://twitter.com/<your-username>" }, -->
-    <!-- { name = "Email", icon = "email", url = "mailto:<your-email-address>" }, -->
+    # { name = "Twitter", icon = "twitter", url = "https://twitter.com/<your-username>" },
+    # { name = "Email", icon = "email", url = "mailto:<your-email-address>" },
 ]
 
 # Show a few recent posts in home page
