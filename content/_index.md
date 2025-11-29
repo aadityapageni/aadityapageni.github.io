@@ -11,10 +11,10 @@ footer = true
 name = "Aaditya Pageni"
 id = "apageni"
 bio = "k8s, openstack"
-avatar = "img/avatar.gif"
+# avatar = "/img/avatar.gif"
 links = [
     { name = "GitHub", icon = "github", url = "https://github.com/aadityapageni" },
-    <!-- { name = "Twitter", icon = "twitter", url = "https://twitter.com/aadityapageni" }, -->
+    { name = "Twitter", icon = "twitter", url = "https://twitter.com/aadityapageni" },
     { name = "Email", icon = "email", url = "mailto:aadityapageni1@gmail.com" },
 ]
 
