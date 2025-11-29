@@ -5,17 +5,17 @@ template = 'home.html'
 lang = 'en'
 
 # Show footer in home page
-footer = false
+footer = true
 
 # If you don't want to display id/bio/avatar, simply comment out that line
-# name = "Aaditya Pageni"
-# id = "apageni"
-# bio = "k8s, openstack"
-# avatar = "img/avatar.webp"
+name = "Aaditya Pageni"
+id = "apageni"
+bio = "k8s, openstack"
+avatar = "img/avatar.gif"
 links = [
     { name = "GitHub", icon = "github", url = "https://github.com/aadityapageni" },
-    # { name = "Twitter", icon = "twitter", url = "https://twitter.com/<your-username>" },
-    # { name = "Email", icon = "email", url = "mailto:<your-email-address>" },
+    <!-- { name = "Twitter", icon = "twitter", url = "https://twitter.com/aadityapageni" }, -->
+    { name = "Email", icon = "email", url = "mailto:aadityapageni1@gmail.com" },
 ]
 
 # Show a few recent posts in home page
