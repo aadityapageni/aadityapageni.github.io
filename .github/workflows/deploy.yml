@@ -15,10 +15,15 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install and Build
+      - name: Build with Zola
         uses: shalzz/zola-deploy-action@v0.19.2
         env:
-          # Target branch
           PAGES_BRANCH: gh-pages
-          # Provide personal access token
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUILD_ONLY: true
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          cname: www.aadityapageni.com.np
