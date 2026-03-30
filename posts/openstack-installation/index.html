@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="~">
+
+  <title>a definitive guide for OpenStack Installation</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.aadityapageni.com.np/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.aadityapageni.com.np/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.aadityapageni.com.np/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://www.aadityapageni.com.np/main.css">
+  
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/hl-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#network-setup">Network Setup</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#openstack-network-connections">Openstack Network connections</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#layer-2-physical-vlan-trunk-diagram">Layer 2 Physical VLAN Trunk Diagram</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#trunk-ports-tagged">Trunk Ports (Tagged)</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#access-ports-untagged">Access Ports (Untagged)</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#management-network">Management Network</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#storage-network">Storage Network</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#layer-3-routing-diagram-with-opnsense-interfaces">Layer 3 Routing Diagram (With OPNsense Interfaces)</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#ovn-packet-walk-diagram">OVN Packet Walk Diagram</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#controller-netplan-from-ubuntu-24-04-lts">Controller netplan from Ubuntu 24.04 LTS</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#compute-1-netplan">Compute 1 netplan</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#compute-2-netplan">Compute 2 netplan</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#explanation-of-kolla-globals-yml">Explanation of kolla&#x2F;globals.yml</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#install-flow">Install flow</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#5-ceph-provisioning-use-these-exact-commands-in-your-environment">5) Ceph provisioning (use these exact commands in your environment)</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#copy-ceph-configs-keyrings-into-kolla-config-tree">Copy Ceph configs&#x2F;keyrings into Kolla config tree</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#6-kolla-ansible-deployment-steps-control-host">6) Kolla Ansible deployment steps (control host)</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#7-concrete-smoke-tests-what-to-run-first">7) Concrete smoke tests (what to run first)</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#networking-sanity">Networking sanity</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#image-compute-keypair">Image + Compute + Keypair</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#volume-cinder-attach-ceph-validation">Volume (Cinder) + Attach + Ceph validation</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#floating-ip-test-external-reachability">Floating IP test (external reachability)</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#8-troubleshooting-checklist-quick">8) Troubleshooting checklist (quick)</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#9-notes-on-upgrades-external-ceph">9) Notes on upgrades &amp; external Ceph</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#10-final-tips-checklist-before-you-press-deploy">10) Final tips &amp; checklist before you press deploy</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#useful-links-again">Useful links (again)</a>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>a definitive guide for OpenStack Installation</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Jan 20, 2026</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://www.aadityapageni.com.np/tags/openstack"><span>#</span>openstack</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <h3 id="network-setup">Network Setup</h3>
+<h5 id="openstack-network-connections">Openstack Network connections</h5>
+<pre class="mermaid">
+  graph LR
+
+%% =============================
+%% Router and Switch
+%% =============================
+
+OPN[OPNsense Router]
+SW[Core Switch VLAN Trunk]
+
+OPN --- SW
+
+%% =============================
+%% Controller Node
+%% =============================
+
+subgraph Controller
+  CMGMT[Mgmt 10.88.10.80]
+  CTUN[VLAN212 10.88.20.80]
+  CEXTAPI[VLAN214 10.88.40.80]
+  CSTOR[Storage 192.168.20.80]
+  CINTVIP[Internal VIP 10.88.10.100]
+  CEXTVIP[External VIP 10.88.40.100]
+end
+
+%% =============================
+%% Compute1 Node
+%% =============================
+
+subgraph Compute1
+  C1MGMT[Mgmt 10.88.10.90]
+  C1TUN[VLAN212 10.88.20.90]
+  C1EXT[VLAN214 10.88.40.90]
+  C1STOR[Storage 192.168.20.90]
+end
+
+%% =============================
+%% Compute2 Node
+%% =============================
+
+subgraph Compute2
+  C2MGMT[Mgmt 10.88.10.91]
+  C2TUN[VLAN212 10.88.20.91]
+  C2EXT[VLAN214 10.88.40.91]
+  C2STOR[Storage 192.168.20.91]
+end
+
+%% =============================
+%% Logical Networks
+%% =============================
+
+subgraph Management_Network
+  MGMTNET[10.88.10.0&#x2F;24]
+end
+
+subgraph Tunnel_Network_VLAN212
+  TUNNET[10.88.20.0&#x2F;24 Geneve]
+end
+
+subgraph External_API_VLAN214
+  EXTAPINET[10.88.40.0&#x2F;24]
+end
+
+subgraph Provider_Network_VLAN213
+  PROVIDER[physnet1 br-ex]
+end
+
+subgraph Storage_Network
+  STORNET[192.168.20.0&#x2F;24 Ceph]
+end
+
+%% =============================
+%% Connections
+%% =============================
+
+SW --- CMGMT
+SW --- CTUN
+SW --- CEXTAPI
+SW --- C1TUN
+SW --- C2TUN
+SW --- C1EXT
+SW --- C2EXT
+
+CMGMT --- MGMTNET
+C1MGMT --- MGMTNET
+C2MGMT --- MGMTNET
+CINTVIP --- MGMTNET
+
+CTUN --- TUNNET
+C1TUN --- TUNNET
+C2TUN --- TUNNET
+
+CEXTAPI --- EXTAPINET
+C1EXT --- EXTAPINET
+C2EXT --- EXTAPINET
+CEXTVIP --- EXTAPINET
+
+CSTOR --- STORNET
+C1STOR --- STORNET
+C2STOR --- STORNET
+
+PROVIDER --- SW
+</pre>
+<ul>
+<li>
+<p>Physical wiring: each server has a trunk (trunk0 / eno2 / similar) carrying all VLANs (212, 213, 214). The switch is VLAN-aware and tags traffic per VLAN to each host.</p>
+</li>
+<li>
+<p>Management network (10.88.10.0/24) is used for internal OpenStack service communication (API traffic, kolla_internal_vip).</p>
+</li>
+<li>
+<p>VLAN 212 (10.88.20.0/24) is reserved for overlay tunnels (VXLAN/Geneve) that OVN/Neutron uses for tenant networking between compute nodes.</p>
+</li>
+<li>
+<p>VLAN 213 is the provider/external network (physnet1 / br-ex). This is where floating IPs and external provider networks live.</p>
+</li>
+<li>
+<p>VLAN 214 (10.88.40.0/24) is used for external API access and the external VIP (kolla_external_vip 10.88.40.100) which front-ends Horizon / public APIs via HAProxy + Keepalived.</p>
+</li>
+<li>
+<p>Storage (192.168.20.0/24) is an isolated network for Ceph / block storage traffic (separate NICs: stor0 / ens2f1).</p>
+</li>
+<li>
+<p>HA/Load balancing: HAProxy + Keepalived run on controller(s) and use the external VIP for public API access; internal VIP handles management failover.</p>
+</li>
+</ul>
+<h4 id="layer-2-physical-vlan-trunk-diagram">Layer 2 Physical VLAN Trunk Diagram</h4>
+<pre class="mermaid">
+  graph LR
+
+%% ================================
+%% Core Switch
+%% ================================
+
+SW[Core Switch VLAN Aware]
+
+%% ================================
+%% OPNsense
+%% ================================
+
+subgraph OPNsense
+  OPN_TRUNK[Trunk Port]
+  OPN_V212[VLAN212]
+  OPN_V213[VLAN213]
+  OPN_V214[VLAN214]
+end
+
+%% ================================
+%% Controller
+%% ================================
+
+subgraph Controller
+  C_TRUNK[trunk0]
+  C_V212[vlan212]
+  C_V213[vlan213 br-ex]
+  C_V214[vlan214]
+  C_MGMT[mgmt 10.88.10.80]
+  C_STOR[stor0 192.168.20.80]
+end
+
+%% ================================
+%% Compute1
+%% ================================
+
+subgraph Compute1
+  C1_TRUNK[eno2]
+  C1_V212[vlan212]
+  C1_V213[vlan213 br-ex]
+  C1_V214[vlan214]
+  C1_MGMT[eno1 10.88.10.90]
+  C1_STOR[ens2f1 192.168.20.90]
+end
+
+%% ================================
+%% Compute2
+%% ================================
+
+subgraph Compute2
+  C2_TRUNK[trunk0]
+  C2_V212[vlan212]
+  C2_V213[vlan213 br-ex]
+  C2_V214[vlan214]
+  C2_MGMT[mgmt 10.88.10.91]
+  C2_STOR[stor0 192.168.20.91]
+end
+
+%% ================================
+%% Trunk Links (Tagged VLANs)
+%% ================================
+
+SW ---|Tagged 212,213,214| C_TRUNK
+SW ---|Tagged 212,213,214| C1_TRUNK
+SW ---|Tagged 212,213,214| C2_TRUNK
+SW ---|Tagged 212,213,214| OPN_TRUNK
+
+%% ================================
+%% VLAN Subinterfaces
+%% ================================
+
+C_TRUNK --&gt; C_V212
+C_TRUNK --&gt; C_V213
+C_TRUNK --&gt; C_V214
+
+C1_TRUNK --&gt; C1_V212
+C1_TRUNK --&gt; C1_V213
+C1_TRUNK --&gt; C1_V214
+
+C2_TRUNK --&gt; C2_V212
+C2_TRUNK --&gt; C2_V213
+C2_TRUNK --&gt; C2_V214
+
+OPN_TRUNK --&gt; OPN_V212
+OPN_TRUNK --&gt; OPN_V213
+OPN_TRUNK --&gt; OPN_V214
+
+%% ================================
+%% Separate Access Ports
+%% ================================
+
+SW ---|Access VLAN Mgmt| C_MGMT
+SW ---|Access VLAN Mgmt| C1_MGMT
+SW ---|Access VLAN Mgmt| C2_MGMT
+
+SW ---|Access VLAN Storage| C_STOR
+SW ---|Access VLAN Storage| C1_STOR
+SW ---|Access VLAN Storage| C2_STOR
+</pre><h4 id="trunk-ports-tagged">Trunk Ports (Tagged)</h4>
+<p>These carry multiple VLANs:</p>
+<ul>
+<li>VLAN 212 → Tunnel (Geneve overlay)</li>
+<li>VLAN 213 → Provider / br-ex</li>
+<li>VLAN 214 → External API</li>
+</ul>
+<p>Trunk interfaces:</p>
+<ul>
+<li>Controller → <code>trunk0</code></li>
+<li>Compute1 → <code>eno2</code></li>
+<li>Compute2 → <code>trunk0</code></li>
+<li>OPNsense → VLAN trunk port</li>
+</ul>
+<p>All are <strong>802.1Q tagged</strong>.</p>
+<hr />
+<h4 id="access-ports-untagged">Access Ports (Untagged)</h4>
+<h3 id="management-network">Management Network</h3>
+<ul>
+<li>
+<p>10.88.10.0/24</p>
+</li>
+<li>
+<p>Connected via mgmt / eno1</p>
+</li>
+<li>
+<p>Used for:</p>
+<ul>
+<li>kolla_internal_vip</li>
+<li>API communication</li>
+<li>SSH / Ansible</li>
+</ul>
+</li>
+</ul>
+<h3 id="storage-network">Storage Network</h3>
+<ul>
+<li>192.168.20.0/24</li>
+<li>Dedicated Ceph backend traffic</li>
+<li>Isolated from tenant traffic</li>
+</ul>
+<h4 id="layer-3-routing-diagram-with-opnsense-interfaces">Layer 3 Routing Diagram (With OPNsense Interfaces)</h4>
+<pre class="mermaid">
+  graph LR
+
+%% =========================
+%% Internet
+%% =========================
+
+INTERNET[Internet]
+
+%% =========================
+%% OPNsense Router
+%% =========================
+
+subgraph OPNsense
+  WAN[WAN]
+  MGMTGW[Mgmt GW 10.88.10.1]
+  V212[VLAN212 GW]
+  V213[VLAN213 Provider GW]
+  V214[VLAN214 GW 10.88.40.1]
+end
+
+INTERNET --&gt; WAN
+
+%% =========================
+%% Management Network
+%% =========================
+
+subgraph Management_10_88_10_0_24
+  CTRL_M[Controller 10.88.10.80]
+  CMP1_M[Compute1 10.88.10.90]
+  CMP2_M[Compute2 10.88.10.91]
+  INT_VIP[Internal VIP 10.88.10.100]
+end
+
+MGMTGW --&gt; CTRL_M
+MGMTGW --&gt; CMP1_M
+MGMTGW --&gt; CMP2_M
+MGMTGW --&gt; INT_VIP
+
+%% =========================
+%% Tunnel Network VLAN212
+%% =========================
+
+subgraph Tunnel_10_88_20_0_24
+  CTRL_T[Controller 10.88.20.80]
+  CMP1_T[Compute1 10.88.20.90]
+  CMP2_T[Compute2 10.88.20.91]
+end
+
+V212 --&gt; CTRL_T
+V212 --&gt; CMP1_T
+V212 --&gt; CMP2_T
+
+%% =========================
+%% External API VLAN214
+%% =========================
+
+subgraph External_API_10_88_40_0_24
+  CTRL_E[Controller 10.88.40.80]
+  CMP1_E[Compute1 10.88.40.90]
+  CMP2_E[Compute2 10.88.40.91]
+  EXT_VIP[External VIP 10.88.40.100]
+end
+
+V214 --&gt; CTRL_E
+V214 --&gt; CMP1_E
+V214 --&gt; CMP2_E
+V214 --&gt; EXT_VIP
+
+%% =========================
+%% Provider Network VLAN213
+%% =========================
+
+subgraph Provider_physnet1
+  FIP[Floating IP Pool]
+  VM[VM Instance]
+end
+
+V213 --&gt; FIP
+FIP --&gt; VM
+
+%% =========================
+%% Storage Network
+%% =========================
+
+subgraph Storage_192_168_20_0_24
+  CTRL_S[Controller 192.168.20.80]
+  CMP1_S[Compute1 192.168.20.90]
+  CMP2_S[Compute2 192.168.20.91]
+end
+
+CTRL_S --- CMP1_S
+CTRL_S --- CMP2_S
+
+%% =========================
+%% WAN Routing
+%% =========================
+
+WAN --&gt; MGMTGW
+WAN --&gt; V214
+WAN --&gt; V213
+</pre><h4 id="ovn-packet-walk-diagram">OVN Packet Walk Diagram</h4>
+<pre class="mermaid">
+  flowchart TD
+
+%% =========================
+%% Internet
+%% =========================
+
+INTERNET[Internet Client]
+
+%% =========================
+%% OPNsense
+%% =========================
+
+OPN_WAN[OPNsense WAN]
+OPN_V213[VLAN213 Gateway]
+
+INTERNET --&gt; OPN_WAN
+OPN_WAN --&gt; OPN_V213
+
+%% =========================
+%% Compute Node Physical
+%% =========================
+
+BR_EX[br-ex on Compute1]
+PATCH_EX_INT[patch-ex to br-int]
+
+OPN_V213 --&gt; BR_EX
+BR_EX --&gt; PATCH_EX_INT
+
+%% =========================
+%% Integration Bridge
+%% =========================
+
+BR_INT[br-int]
+OVN_ROUTER[OVN Logical Router]
+DNAT[DNAT FloatingIP 203.0.113.50 -&gt; 192.168.100.10]
+
+PATCH_EX_INT --&gt; BR_INT
+BR_INT --&gt; OVN_ROUTER
+OVN_ROUTER --&gt; DNAT
+
+%% =========================
+%% VM Network
+%% =========================
+
+VM_PORT[VM vNIC Port]
+VM[VM 192.168.100.10]
+
+DNAT --&gt; VM_PORT
+VM_PORT --&gt; VM
+</pre><h4 id="controller-netplan-from-ubuntu-24-04-lts">Controller netplan from Ubuntu 24.04 LTS</h4>
+<pre><code>network:
+  version: 2
+  ethernets:
+    mgmt:
+      addresses:
+        - 10.88.10.80&#x2F;24
+      routes:
+        - to: default
+          via: 10.88.10.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 1.1.1.1
+    trunk0:
+      dhcp4: false
+      dhcp6: false
+    stor0:
+      addresses:
+        - 192.168.20.80&#x2F;24
+  vlans:
+    vlan212:
+      id: 212
+      link: trunk0
+      addresses:
+        - 10.88.20.80&#x2F;24
+    vlan213:
+      id: 213
+      link: trunk0
+    vlan214:
+      id: 214
+      link: trunk0
+      addresses:
+        - 10.88.40.80&#x2F;24
+</code></pre>
+<h4 id="compute-1-netplan">Compute 1 netplan</h4>
+<pre><code>network:
+  version: 2
+  ethernets:
+    eno1:
+      addresses:
+        - 10.88.10.90&#x2F;24
+      routes:
+        - to: default
+          via: 10.88.10.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 1.1.1.1
+    eno2:
+      dhcp4: false
+      dhcp6: false
+    ens2f1:
+      addresses:
+        - 192.168.20.90&#x2F;24
+  vlans:
+    vlan212:
+      id: 212
+      link: eno2
+      addresses:
+        - 10.88.20.90&#x2F;24
+    vlan213:
+      id: 213
+      link: eno2
+    vlan214:
+      id: 214
+      link: eno2
+      addresses:
+        - 10.88.40.90&#x2F;24
+</code></pre>
+<h4 id="compute-2-netplan">Compute 2 netplan</h4>
+<pre><code>network:
+  version: 2
+
+  ethernets:
+    mgmt:
+      addresses:
+        - 10.88.10.91&#x2F;24
+      routes:
+        - to: default
+          via: 10.88.10.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 1.1.1.1
+    trunk0:
+      dhcp4: false
+      dhcp6: false
+    stor0:
+      addresses:
+        - 192.168.20.91&#x2F;24
+  vlans:
+    vlan212:
+      id: 212
+      link: trunk0
+      addresses:
+        - 10.88.20.91&#x2F;24
+    vlan213:
+      id: 213
+      link: trunk0
+    vlan214:
+      id: 214
+      link: trunk0
+      addresses:
+        - 10.88.40.91&#x2F;24
+</code></pre>
+<h4 id="explanation-of-kolla-globals-yml">Explanation of <code>kolla/globals.yml</code></h4>
+<ul>
+<li><code>kolla_base_distro: "ubuntu"</code> — use Ubuntu base images for containers</li>
+<li><code>kolla_internal_vip_address: "10.88.10.100"</code> — VIP for internal management endpoint (keystone, db clients etc.).</li>
+<li><code>kolla_external_vip_address: "10.88.40.100"</code> — VIP for public APIs and Horizon (fronted by HAProxy + Keepalived).</li>
+<li><code>kolla_external_vip_interface: "vlan214"</code> — the external VIP sits on VLAN214(10.88.40.90/24).</li>
+<li><code>network_interface: "mgmt"</code> — host interface used for management traffic.</li>
+<li><code>neutron_external_interface: "vlan213"</code> — the physical interface bridged into <code>br-ex</code>.</li>
+<li><code>tunnel_interface: "vlan212"</code> — the VLAN used to carry overlay tunnels between compute nodes.</li>
+</ul>
+<p><strong>OpenStack services &amp; compute</strong></p>
+<ul>
+<li><code>enable_cinder: "yes"</code> — deploy Cinder (Block Storage).</li>
+<li><code>nova_compute_virt_type: "kvm"</code> — use KVM on compute nodes.</li>
+<li><code>neutron_plugin_agent: "ovn"</code> — OVN (Open Virtual Network) as Neutron backend (recommended for distributed services) <em>kolla-ansible recently changed to <code>ovn</code> from <code>ovs</code> since 25.2.</em></li>
+<li><code>neutron_ovn_distributed_fip: "yes"</code> — enable distributed floating IPs so NAT happens at compute nodes (removes central gateway bottlenecks).</li>
+<li><code>neutron_ovn_dhcp_agent: "yes"</code> — OVN DHCP agent for handing out in-VM leases.</li>
+<li><code>enable_ovn_db_cluster: "yes"</code> — set up OVN northbound/southbound DB HA (useful for multi-controller HA).</li>
+<li><code>enable_neutron_agent_ovs: "no"</code> — not using classic OVS neutron agent (OVN replaces most parts).</li>
+</ul>
+<p><strong>Coordination / key-value store</strong></p>
+<ul>
+<li><code>enable_redis: "yes" </code> New version 2025.2 doesnot support redis instead it supports valkey. <em><strong>Kolla 2025.2 introduces Valkey</strong> (a replacement role and mechanism so deployments can use Valkey instead of Redis; Kolla provides a Valkey role and a migration path). If you’re deploying 2025.2, prefer following the release notes about Valkey and <code>kolla-genpwd</code>/<code>kolla-mergepwd</code> changes.</em> (<a rel="nofollow noreferrer" title="2025.2 Series Release Notes — Kolla Ansible Release Notes ..." href="https://docs.openstack.org/releasenotes/kolla-ansible/2025.2.html?utm_source=chatgpt.com">OpenStack Docs</a>)</li>
+</ul>
+<p><strong>HA / load balancing / extras</strong></p>
+<ul>
+<li><code>enable_haproxy: "yes"</code> &amp; <code>enable_keepalived: "yes"</code> — HAProxy + Keepalived provide the public and internal VIPs for APIs and Horizon.</li>
+<li><code>neutron_bridge_name: "br-ex"</code> — the external bridge name used by Kolla for provider networks.</li>
+<li><code>neutron_physical_network: "physnet1"</code> — maps the <code>br-ex</code> bridge to this logical physical network.</li>
+<li><code>neutron_type_drivers: "flat,vlan,vxlan,geneve"</code> — supported Neutron network types; we're allowing many types but explicitly using <code>geneve</code> for tenant networks.</li>
+<li><code>neutron_tenant_network_types: "geneve"</code> — tenant overlay = Geneve.</li>
+</ul>
+<p><strong>Storage / Ceph integration</strong></p>
+<ul>
+<li><code>enable_ceph: "yes"</code> + <code>glance_backend_ceph: "yes"</code> + <code>cinder_backend_ceph: "yes"</code> + <code>nova_backend_ceph: "yes"</code> — these tell Kolla to configure services to use Ceph (RBD) for images, volumes, and ephemeral disks. <strong>Important</strong>: Kolla <strong>does not provision</strong> the Ceph cluster for you; you must provision Ceph (with <code>cephadm</code> or ansible) and then provide pools, keyrings, and the Ceph config to Kolla which we'll see in deployment steps. (<a rel="nofollow noreferrer" title="External Ceph — kolla-ansible 21.1.0.dev411 documentation" href="https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html?utm_source=chatgpt.com">OpenStack Docs</a>)</li>
+<li><code>ceph_*</code> variables (<code>ceph_glance_user</code>, <code>ceph_cinder_user</code>, <code>ceph_nova_user</code>, <code>ceph_*_pool_name</code>, <code>*_keyring</code>) — used by Kolla to populate container config pointing to Ceph pools and keyrings you created.</li>
+</ul>
+<p><strong>Backup &amp; high-availability helpers</strong></p>
+<ul>
+<li>
+<p><code>enable_mariabackup: "yes"</code> — enable MariaDB backup tool integration.</p>
+</li>
+<li>
+<p><code>enable_masakari: "yes"</code> — Masakari provides instance HA (automatic failover/restart of instances on host failures). Useful for production HA scenarios.</p>
+</li>
+<li>
+<p><code>enable_skyline: "yes"</code> — enable the Skyline modern dashboard (if you want a modern UI instead of or alongside Horizon). Kolla includes a <code>skyline</code> role and configuration; enabling it will deploy Skyline containers and wire it to Keystone &amp; Prometheus if configured. (<a rel="nofollow noreferrer" title="Skyline OpenStack dashboard — kolla-ansible 21.1.0. ..." href="https://docs.openstack.org/kolla-ansible/latest/reference/shared-services/skyline-guide.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+</ul>
+<h4 id="install-flow">Install flow</h4>
+<p><strong>Important</strong>: Kolla 2025.2 includes changes (Valkey migration from Redis, OVN improvements). Read the 2025.2 release notes and follow migration steps if upgrading. (<a rel="nofollow noreferrer" title="2025.2 Series Release Notes — Kolla Ansible Release Notes ..." href="https://docs.openstack.org/releasenotes/kolla-ansible/2025.2.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+<p><strong>High-level steps</strong></p>
+<ol>
+<li>
+<p>Prepare OS on all hosts (matching <code>kolla_base_distro</code> and kernel/iptables/etc).</p>
+</li>
+<li>
+<p>Ensure DNS / hostnames / NTP are correct.</p>
+</li>
+<li>
+<p>Create <code>inventory</code> mapping (controller &amp; compute groups) and set <code>globals.yml</code> and <code>passwords.yml</code>.</p>
+</li>
+<li>
+<p>Provision Ceph first (external to Kolla) — we’ll use <code>cephadm</code> here. Kolla expects pools and keyrings to exist. (<a rel="nofollow noreferrer" title="External Ceph — kolla-ansible 21.1.0.dev411 documentation" href="https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+<li>
+<p>Put Ceph config + keyrings into <code>/etc/kolla/config/*</code> so Kolla containers can consume them.</p>
+</li>
+<li>
+<p>Run Kolla prechecks and deploy.</p>
+</li>
+<li>
+<p>Post-deploy tests: <code>openstack</code> client calls (create network, boot VM, attach volume, floating IP test), and Ceph validations.</p>
+</li>
+</ol>
+<hr />
+<h2 id="5-ceph-provisioning-use-these-exact-commands-in-your-environment">5) <strong>Ceph provisioning</strong> (use these exact commands in your environment)</h2>
+<blockquote>
+<p>Kolla expects Ceph (external) to be provisioned and pools/keyrings created. For small setups <code>cephadm</code> is the recommended orchestrator.</p>
+</blockquote>
+<p>Run on your Ceph bootstrap host (use the host’s <strong>management/internal IP</strong> for <code>--mon-ip</code> and <code>--cluster-network</code>):</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Install cephadm from Ubuntu Ceph Squid Repo
+apt-get install cephadm -y
+
+# Bootstrap the Ceph cluster (Monitor IP is the mgmt&#x2F;internal IP)
+cephadm bootstrap \
+    --mon-ip {get ip from above network}\
+    --single-host-defaults \
+    --cluster-network={get ip from above network} \
+    --initial-dashboard-password=startsm \
+    --dashboard-password-noupdate \
+    --allow-fqdn-hostname | tee cephadm-bootstrap.log
+</code></pre>
+<p>Then:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Access Ceph Shell
+cephadm shell
+# Check cluster status
+ceph -s
+# Exit shell
+exit
+
+# Install client tools (outside of cephadm shell)
+apt install ceph-common
+
+ceph orch apply osd --all-available-devices
+
+ceph osd pool create volumes
+ceph osd pool create images
+ceph osd pool create backups
+ceph osd pool create vms
+
+# Set replication size to 1 for the AIO single-node deployment
+ceph config set global mon_allow_pool_size_one true
+ceph osd pool set volumes size 1 --yes-i-really-mean-it
+ceph osd pool set .mgr size 1 --yes-i-really-mean-it # For the mgr metadata pool
+ceph osd pool set images size 1 --yes-i-really-mean-it
+ceph osd pool set backups size 1 --yes-i-really-mean-it
+ceph osd pool set vms size 1 --yes-i-really-mean-it
+
+# Enable the RBD application on the new pools
+ceph osd pool application enable volumes rbd
+ceph osd pool application enable images rbd
+ceph osd pool application enable backups rbd
+ceph osd pool application enable vms rbd
+
+# Optional: Mute the expected health warning for single-node setup
+ceph health mute POOL_NO_REDUNDANCY
+
+#Validate
+ceph -s
+ceph osd lspools
+ceph osd tree
+
+# Create Ceph Users and Keyrings (Output to &#x2F;etc&#x2F;ceph&#x2F;)
+ceph auth get-or-create client.glance mon &#x27;allow r&#x27; osd &#x27;allow class-read object_prefix rbd_children, allow rwx pool=images&#x27; -o &#x2F;etc&#x2F;ceph&#x2F;ceph.client.glance.keyring
+ceph auth get-or-create client.cinder mon &#x27;allow r&#x27; osd &#x27;allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rwx pool=images&#x27; -o &#x2F;etc&#x2F;ceph&#x2F;ceph.client.cinder.keyring
+ceph auth get-or-create client.cinder-backup mon &#x27;allow r&#x27; osd &#x27;allow class-read object_prefix rbd_children, allow rwx pool=backups&#x27; -o &#x2F;etc&#x2F;ceph&#x2F;ceph.client.cinder-backup.keyring
+ceph auth get-or-create client.nova mon &#x27;allow r&#x27; osd &#x27;allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images&#x27; -o &#x2F;etc&#x2F;ceph&#x2F;ceph.client.nova.keyring
+</code></pre>
+<blockquote>
+<p>Note: <code>cephadm</code> is the supported lifecycle manager for Ceph and is the recommended path to create the Ceph cluster when using Kolla external Ceph. (<a rel="nofollow noreferrer" title="Cephadm - Ceph Documentation" href="https://docs.ceph.com/en/reef/cephadm/?utm_source=chatgpt.com">Ceph Documentation</a>)</p>
+</blockquote>
+<h3 id="copy-ceph-configs-keyrings-into-kolla-config-tree">Copy Ceph configs/keyrings into Kolla config tree</h3>
+<p>(so containers can authenticate to Ceph):</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Generate SSL certificates for Kolla (if you want TLS for APIs)
+kolla-ansible certificates -i all-in-one
+
+# Create config directories for services that will use Ceph
+mkdir &#x2F;etc&#x2F;kolla&#x2F;config
+mkdir &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;nova
+mkdir &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;glance
+mkdir -p &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;cinder&#x2F;cinder-volume
+mkdir &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;cinder&#x2F;cinder-backup
+
+# Copy Ceph configuration files
+cp &#x2F;etc&#x2F;ceph&#x2F;ceph.conf &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;cinder&#x2F;
+cp &#x2F;etc&#x2F;ceph&#x2F;ceph.conf &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;nova&#x2F;
+cp &#x2F;etc&#x2F;ceph&#x2F;ceph.conf &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;glance&#x2F;
+
+# Copy Ceph Keyrings
+cp &#x2F;etc&#x2F;ceph&#x2F;ceph.client.glance.keyring &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;glance&#x2F;
+cp &#x2F;etc&#x2F;ceph&#x2F;ceph.client.nova.keyring &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;nova&#x2F;
+cp &#x2F;etc&#x2F;ceph&#x2F;ceph.client.cinder.keyring &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;nova&#x2F;
+cp &#x2F;etc&#x2F;ceph&#x2F;ceph.client.cinder.keyring &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;cinder&#x2F;cinder-volume&#x2F;
+cp &#x2F;etc&#x2F;ceph&#x2F;ceph.client.cinder.keyring &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;cinder&#x2F;cinder-backup&#x2F;
+cp &#x2F;etc&#x2F;ceph&#x2F;ceph.client.cinder-backup.keyring &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;cinder&#x2F;cinder-backup&#x2F;
+</code></pre>
+<hr />
+<h2 id="6-kolla-ansible-deployment-steps-control-host">6) Kolla Ansible deployment steps (control host)</h2>
+<p><strong>Preparatory steps (one-time on a control machine)</strong></p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Install required dependecies(Ubuntu used here, can use other distros as well)
+sudo apt install git python3-dev libffi-dev gcc libssl-dev libdbus-glib-1-dev
+
+# Create python virtual environment
+python3 -m venv .venv
+source .venv&#x2F;bin&#x2F;activate
+
+# update pip (good habit)
+pip install -U pip
+
+# Install kolla-ansible repo(I&#x27;m installing 2025.2 version)
+pip install git+https:&#x2F;&#x2F;opendev.org&#x2F;openstack&#x2F;kolla-ansible@stable&#x2F;2025.2
+
+# Create &#x2F;etc&#x2F;koll directory with permissions
+sudo mkdir -p &#x2F;etc&#x2F;kolla
+sudo chown $USER:$USER &#x2F;etc&#x2F;kolla
+
+# Copy globals.yml and passwords.yml to &#x2F;etc&#x2F;kolla directory 
+cp -r .venv&#x2F;share&#x2F;kolla-ansible&#x2F;etc_examples&#x2F;kolla&#x2F;* &#x2F;etc&#x2F;kolla
+ 
+# Copy `all-in-one` inventory file to the current directory
+cp .venv&#x2F;share&#x2F;kolla-ansible&#x2F;ansible&#x2F;inventory&#x2F;all-in-one .
+
+# Install Ansible galaxy dependecies
+kolla-ansible install-deps
+
+# Install python deps
+pip install docker dbus-python
+</code></pre>
+<p><strong>Configure <code>/etc/kolla/globals.yml</code></strong> — paste your <code>globals</code> values (the block you provided). Make sure IPs, interfaces and VLANs match your netplan.</p>
+<p><strong>Create <code>/etc/kolla/passwords.yml</code></strong> (it’s shipped but usually blank). Generate passwords:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># generate passwords for Kolla
+kolla-genpwd -p &#x2F;etc&#x2F;kolla&#x2F;passwords.yml
+</code></pre>
+<p>(See Kolla tools <code>kolla-genpwd</code> and <code>kolla-mergepwd</code> for upgrades or merging with existing installs). (<a rel="nofollow noreferrer" title="kolla-ansible/setup.cfg at master" href="https://opendev.org/openstack/kolla-ansible/src/branch/master/setup.cfg?utm_source=chatgpt.com">OpenDev: Free Software Needs Free Tools</a>)</p>
+<p><strong>Inventory</strong> — create an Ansible inventory, e.g.:</p>
+<p><code>/etc/kolla/inventory/all-inventory</code> with groups (controller, compute) and <code>ansible_host</code> entries for each node (or follow the kolla documentation example inventory).</p>
+<p><strong>Pre-flight checks:</strong></p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Run kolla-ansible prechecks
+kolla-ansible -i &#x2F;etc&#x2F;kolla&#x2F;inventory&#x2F;all-inventory prechecks
+</code></pre>
+<p>(Prechecks will validate SSH connectivity, kernel/sysctl, container runtime availability, etc.) (<a rel="nofollow noreferrer" title="Deployment of Kolla on Bare Metal or Virtual Machine" href="https://docs.openstack.org/kolla/mitaka/quickstart.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+<p><strong>Generate configuration &amp; deploy:</strong></p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># generate config files for enabled services
+kolla-ansible -i &#x2F;etc&#x2F;kolla&#x2F;inventory&#x2F;all-inventory genconfig
+
+# deploy (this pulls images, creates containers, configures services)
+kolla-ansible -i &#x2F;etc&#x2F;kolla&#x2F;inventory&#x2F;all-inventory deploy
+</code></pre>
+<p>If you change configuration after deploy, use:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># to update config but not restart containers:
+kolla-ansible -i &#x2F;etc&#x2F;kolla&#x2F;inventory&#x2F;all-inventory genconfig
+
+# to reconfigure&#x2F;restart containers:
+kolla-ansible -i &#x2F;etc&#x2F;kolla&#x2F;inventory&#x2F;all-inventory reconfigure
+</code></pre>
+<p><strong>Post-deploy</strong> — Source the admin environment and validate APIs:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Source admin credentials (generated by Kolla)
+source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh
+
+# Check keystone &#x2F; list services
+openstack service list
+</code></pre>
+<p>(If Keystone endpoint isn’t available, check HAProxy + Keepalived / VIPs.)</p>
+<hr />
+<h2 id="7-concrete-smoke-tests-what-to-run-first">7) Concrete smoke tests (what to run first)</h2>
+<p>Source admin credentials (on the control host or a host that has the client tools):</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh
+openstack project list
+openstack user list
+openstack service list
+</code></pre>
+<h3 id="networking-sanity">Networking sanity</h3>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># List neutron agents
+openstack network agent list
+
+# List networks
+openstack network list
+</code></pre>
+<h3 id="image-compute-keypair">Image + Compute + Keypair</h3>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Upload a tiny cirros or ubuntu image
+openstack image create cirros --file cirros-0.5.2-x86_64-disk.img --disk-format qcow2 --container-format bare --public
+
+# Create flavor
+openstack flavor create --ram 512 --vcpus 1 --disk 1 m1.tiny
+
+# Create keypair
+openstack keypair create demo-key &gt; demo-key.pem
+chmod 600 demo-key.pem
+
+# Create a network, subnet and router (tenant network)
+openstack network create demo-net
+openstack subnet create --network demo-net --subnet-range 192.168.100.0&#x2F;24 demo-subnet
+openstack router create demo-router
+openstack router add subnet demo-router demo-subnet
+openstack router set --external-gateway &lt;public-network&gt; demo-router  # &lt;public-network&gt; is your provider network name
+
+# Boot instance
+openstack server create --image cirros --flavor m1.tiny --key-name demo-key --network demo-net test-vm
+
+# Check instance
+openstack server list
+</code></pre>
+<h3 id="volume-cinder-attach-ceph-validation">Volume (Cinder) + Attach + Ceph validation</h3>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Create a volume (this should create a Ceph RBD image if cinder-&gt;ceph is configured)
+openstack volume create --size 1 test-volume
+openstack volume list
+
+# Attach to server
+openstack server add volume test-vm test-volume
+
+# Verify Ceph pools &amp; RBD images on ceph cluster:
+ceph -s
+ceph osd lspools
+# On Ceph side: rbd ls volumes  (or use cephadm shell then rbd)
+</code></pre>
+<h3 id="floating-ip-test-external-reachability">Floating IP test (external reachability)</h3>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Allocate and assign a floating IP (from provider network)
+openstack floating ip create &lt;public-network&gt;
+openstack server add floating ip test-vm &lt;floating-ip&gt;
+
+# From the internet (or an external host that can route to VLAN213), curl the public IP
+curl http:&#x2F;&#x2F;&lt;floating-ip&gt;
+</code></pre>
+<p>If <code>neutron_ovn_distributed_fip: "yes"</code> is set, NAT is distributed at compute and you'll see DNAT/SNAT handled in the compute host (no centralized NAT gateway).</p>
+<hr />
+<h2 id="8-troubleshooting-checklist-quick">8) Troubleshooting checklist (quick)</h2>
+<ul>
+<li>
+<p><strong>VIPs not present</strong>: check <code>keepalived</code> containers and the host’s IP table/VRRP state.</p>
+</li>
+<li>
+<p><strong>Images failing to upload / Glance errors</strong>: check Ceph keyring presence in <code>/etc/kolla/config/glance/</code> and container logs for <code>glance-api</code>.</p>
+</li>
+<li>
+<p><strong>Cinder volume creation stuck</strong>: check <code>cinder-volume</code> logs and Ceph OSD health with <code>ceph -s</code>.</p>
+</li>
+<li>
+<p><strong>OVN/Neutron connectivity issues</strong>: verify <code>ovn-controller</code> running on computes and <code>ovn-northd</code>/DB on controllers (Kolla 2025.2 added improvements to OVN container envs to make <code>ovn-nbctl</code>/<code>ovn-sbctl</code> manageable). (<a rel="nofollow noreferrer" title="2025.2 Series Release Notes — Kolla Ansible Release Notes ..." href="https://docs.openstack.org/releasenotes/kolla-ansible/2025.2.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+<li>
+<p><strong>Redis/Coordination errors</strong>: if you upgraded from older Kolla, check Valkey variables and migration guidance — 2025.2 introduces a Valkey role and sentinel support. (<a rel="nofollow noreferrer" title="2025.2 Series Release Notes — Kolla Ansible Release Notes ..." href="https://docs.openstack.org/releasenotes/kolla-ansible/2025.2.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+</ul>
+<hr />
+<h2 id="9-notes-on-upgrades-external-ceph">9) Notes on upgrades &amp; external Ceph</h2>
+<ul>
+<li>
+<p>Kolla <strong>intentionally does not</strong> provision Ceph for you; use <code>cephadm</code>/ceph-ansible and create pools &amp; keyrings. Kolla will use those keyrings/pools once copied into <code>/etc/kolla/config/*</code>. (<a rel="nofollow noreferrer" title="External Ceph — kolla-ansible 21.1.0.dev411 documentation" href="https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+<li>
+<p>If you are upgrading from a release that used Redis, be aware of the Valkey migration changes in 2025.2 and follow the release notes / migration documentation carefully. (<a rel="nofollow noreferrer" title="2025.2 Series Release Notes — Kolla Ansible Release Notes ..." href="https://docs.openstack.org/releasenotes/kolla-ansible/2025.2.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+</ul>
+<hr />
+<h2 id="10-final-tips-checklist-before-you-press-deploy">10) Final tips &amp; checklist before you press <code>deploy</code></h2>
+<ul>
+<li>
+<p>Ensure <code>/etc/hosts</code> resolves hostnames used in the inventory (Kolla uses inventory hostnames heavily).</p>
+</li>
+<li>
+<p>Ensure <code>ansible_user</code> has passwordless sudo on managed nodes.</p>
+</li>
+<li>
+<p>Confirm netplan configuration—management IPs &amp; trunk interfaces must be stable and reachable from the control host.</p>
+</li>
+<li>
+<p>Copy Ceph <code>ceph.conf</code> and keyrings into <code>/etc/kolla/config/*</code> exactly as shown above.</p>
+</li>
+<li>
+<p>Generate passwords with <code>kolla-genpwd</code> and keep <code>/etc/kolla/passwords.yml</code> safe.</p>
+</li>
+<li>
+<p>Run <code>kolla-ansible -i INVENTORY prechecks</code> and fix everything it reports.</p>
+</li>
+</ul>
+<hr />
+<h2 id="useful-links-again">Useful links (again)</h2>
+<ul>
+<li>
+<p>Kolla Ansible 2025.2 release notes (Valkey + OVN notes). (<a rel="nofollow noreferrer" title="2025.2 Series Release Notes — Kolla Ansible Release Notes ..." href="https://docs.openstack.org/releasenotes/kolla-ansible/2025.2.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+<li>
+<p>Kolla external-Ceph guidance. (<a rel="nofollow noreferrer" title="External Ceph — kolla-ansible 21.1.0.dev411 documentation" href="https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+<li>
+<p>Cephadm docs &amp; bootstrap reference. (<a rel="nofollow noreferrer" title="Cephadm - Ceph Documentation" href="https://docs.ceph.com/en/reef/cephadm/?utm_source=chatgpt.com">Ceph Documentation</a>)</p>
+</li>
+<li>
+<p>Kolla operating docs / tools (kolla-genpwd / prechecks / genconfig). (<a rel="nofollow noreferrer" title="Operating Kolla — kolla-ansible 21.1.0.dev416 ..." href="https://docs.openstack.org/kolla-ansible/latest/user/operating-kolla.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+<li>
+<p>Skyline Dashboard docs (if you enabled Skyline). (<a rel="nofollow noreferrer" title="Skyline OpenStack dashboard — kolla-ansible 21.1.0. ..." href="https://docs.openstack.org/kolla-ansible/latest/reference/shared-services/skyline-guide.html?utm_source=chatgpt.com">OpenStack Docs</a>)</p>
+</li>
+</ul>
+
+      </article>
+
+      
+      
+      <div class="reaction right" data-endpoint="https:&#x2F;&#x2F;wwwaadityapageni.com.np&#x2F;api&#x2F;reaction"></div>
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2026 Aaditya Pageni
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+    
+    
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+
+
+  <script src="https://www.aadityapageni.com.np/js/main.js"></script>
+</body>
+
+</html>

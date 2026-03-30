@@ -1,0 +1,17 @@
+[[collection]]
+type = "box"
+title = "AI Researcher"
+subtitle = "DeepSeek"
+content = "Work on the DeepSeek project, a research project that aims to develop a new generation of AI models that can understand and generate natural language text. The project is focused on developing models that can generate text that is coherent, informative, and engaging, and that can be used in a wide range of applications, including chatbots, virtual assistants, and content generation tools."
+
+[[collection]]
+type = "box"
+title = "Machine Learning Engineer"
+subtitle = "OpenAI"
+content = "Alone with the team, I worked on developing new machine learning models and algorithms for a wide range of applications, including natural language processing, computer vision, and reinforcement learning. I also worked on developing new tools and frameworks for training and deploying machine learning models, and on building systems that can scale to handle large amounts of data and compute resources."
+
+[[collection]]
+type = "box"
+title = "Backend Engineer"
+subtitle = "Google"
+content = "As a backend engineer at Google, I worked on developing and maintaining the backend systems that power Google's search engine, as well as other products and services. I worked on developing new features and improvements for the search engine, as well as on optimizing the performance and scalability of the backend systems."

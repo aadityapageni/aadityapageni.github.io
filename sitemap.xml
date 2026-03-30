@@ -7,6 +7,29 @@
         <loc>https://www.aadityapageni.com.np/categories/</loc>
     </url>
     <url>
+        <loc>https://www.aadityapageni.com.np/collections/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/notes/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/notes/ceph-installation/</loc>
+        <lastmod>2026-01-20</lastmod>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/posts/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/posts/openstack-installation/</loc>
+        <lastmod>2026-01-20</lastmod>
+    </url>
+    <url>
         <loc>https://www.aadityapageni.com.np/tags/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/ceph/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/openstack/</loc>
     </url>
 </urlset>

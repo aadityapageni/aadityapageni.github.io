@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="~">
+
+  <title>Ceph Installation</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.aadityapageni.com.np/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.aadityapageni.com.np/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.aadityapageni.com.np/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://www.aadityapageni.com.np/main.css">
+  
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/hl-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#ceph-object-gateway">ceph object gateway</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#ceph-block-storage">ceph block storage</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#share-local-device-block-image-over-nfs">share local device(block image ) over NFS</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#cephfs">CephFs</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#ceph-authentication">ceph authentication</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#mount-cephfs-on-client">mount cephFS on client</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#rook">Rook</a>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>Ceph Installation</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Jan 20, 2026</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://www.aadityapageni.com.np/tags/ceph"><span>#</span>ceph</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <p>ceph clustering in 3 vm in vagrant</p>
+<ul>
+<li>install cephadm on any one node</li>
+</ul>
+<pre><code>apt update -y
+apt install -y cephadm ceph-common
+</code></pre>
+<ul>
+<li>
+<p>make sure python, lvm2, docker and chrony is installed on other nodes, these are installed on working node auto</p>
+</li>
+<li>
+<p>use bootstrap command to</p>
+</li>
+<li>
+<p>Create a Monitor and a Manager daemon for the new cluster on the local host.</p>
+</li>
+<li>
+<p>Generate a new SSH key for the Ceph cluster and add it to the root user’s /root/.ssh/authorized_keys file.</p>
+</li>
+<li>
+<p>Write a copy of the public key to /etc/ceph/ceph.pub.</p>
+</li>
+<li>
+<p>Write a minimal configuration file to /etc/ceph/ceph.conf. This file is needed to communicate with Ceph daemons.</p>
+</li>
+<li>
+<p>Write a copy of the client.admin administrative (privileged!) secret key to /etc/ceph/ceph.client.admin.keyring.</p>
+</li>
+<li>
+<p>Add the _admin label to the bootstrap host. By default, any host with this label will (also) get a copy of /etc/ceph/ceph.conf and /etc/ceph/ceph.client.admin.keyring.</p>
+<pre><code> `cephadm bootstrap --mon-ip &lt;self.ip(192.168.56.101)&gt;`
+</code></pre>
+<ul>
+<li>access ceph gui after this at port 8443</li>
+</ul>
+</li>
+<li>
+<p>adding hosts
+<code> ssh-copy-id -f -i /etc/ceph/ceph.pub root@*&lt;new-host&gt;</code></p>
+</li>
+<li>
+<p><code>cephadm shell</code> to work with ceph cli</p>
+</li>
+</ul>
+<p><code>ceph orch host add &lt;host2(ubuntu2)&gt; 10.10.0.102</code></p>
+<ul>
+<li>
+<p>give admin acess to multiple hosts, recommend to give more than one</p>
+<p><code> ceph orch host label add *&lt;host&gt;* _admin</code></p>
+</li>
+<li>
+<p>consume all available devices to OSD
+<code>ceph orch apply osd --all-available-devices</code></p>
+</li>
+<li>
+<p>check for devices with <code>ceph orch device ls</code></p>
+</li>
+<li>
+<p><code>ceph orch apply osd --all-available-devices --dry-run</code></p>
+</li>
+<li>
+<p>add manager in 2 nodes
+<code>ceph orch apply mgr node1,node2</code></p>
+</li>
+</ul>
+<h4 id="ceph-object-gateway"><strong>ceph object gateway</strong></h4>
+<ul>
+<li>
+<p>this deploys 2 rgw instance within SERVICE_NAME
+<code>ceph orch apply rgw SERVICE_NAME</code></p>
+</li>
+<li>
+<p>for multi cluster config, there are realm, zone, zone-group</p>
+</li>
+<li>
+<p><a rel="nofollow noreferrer" href="https://docs.redhat.com/en/documentation/red_hat_ceph_storage/5/html/object_gateway_guide/deployment#deploying-the-ceph-object-gateway-using-the-command-line-interface_rgw">red hat docs</a></p>
+</li>
+<li>
+<p>test rgw with boto3/s3</p>
+</li>
+<li>
+<p>create s3 account with rados-admin | <a rel="nofollow noreferrer" href="https://docs.redhat.com/en/documentation/red_hat_ceph_storage/5/html/object_gateway_guide/testing#create-an-s3-user-rgw">sauce</a></p>
+</li>
+</ul>
+<pre><code>radosgw-admin user create --uid=jane --subuser=jane:swift --access=full --display-name=&quot;jane&quot;
+{
+    &quot;user_id&quot;: &quot;jane&quot;,
+    &quot;display_name&quot;: &quot;jane&quot;,
+    &quot;email&quot;: &quot;&quot;,
+    &quot;suspended&quot;: 0,
+    &quot;max_buckets&quot;: 1000,
+    &quot;subusers&quot;: [
+        {
+            &quot;id&quot;: &quot;jane:swift&quot;,
+            &quot;permissions&quot;: &quot;full-control&quot;
+        }
+    ],
+    &quot;keys&quot;: [
+        {
+            &quot;user&quot;: &quot;jane&quot;,
+            &quot;access_key&quot;: &quot;N0QLVUM9ATZQ6ACJEEGH&quot;,
+            &quot;secret_key&quot;: &quot;02vPmQwj6n1ZGsEX6FDpqSPhqor6kyI84cMIPYJj&quot;,
+            &quot;active&quot;: true,
+            &quot;create_date&quot;: &quot;2025-09-13T09:36:19.387859Z&quot;
+        }
+    ],
+    &quot;swift_keys&quot;: [
+        {
+            &quot;user&quot;: &quot;jane:swift&quot;,
+            &quot;secret_key&quot;: &quot;36c8GEOp6w2HPrg81o97XvkpuCEN7HccugzSD6rl&quot;,
+            &quot;active&quot;: true,
+            &quot;create_date&quot;: &quot;2025-09-13T09:36:19.429579Z&quot;
+        }
+    ],
+    &quot;caps&quot;: [],
+    &quot;op_mask&quot;: &quot;read, write, delete&quot;,
+    &quot;default_placement&quot;: &quot;&quot;,
+    &quot;default_storage_class&quot;: &quot;&quot;,
+    &quot;placement_tags&quot;: [],
+    &quot;bucket_quota&quot;: {
+        &quot;enabled&quot;: false,
+        &quot;check_on_raw&quot;: false,
+        &quot;max_size&quot;: -1,
+        &quot;max_size_kb&quot;: 0,
+        &quot;max_objects&quot;: -1
+    },
+    &quot;user_quota&quot;: {
+        &quot;enabled&quot;: false,
+        &quot;check_on_raw&quot;: false,
+        &quot;max_size&quot;: -1,
+        &quot;max_size_kb&quot;: 0,
+        &quot;max_objects&quot;: -1
+    },
+    &quot;temp_url_keys&quot;: [],
+    &quot;type&quot;: &quot;rgw&quot;,
+    &quot;mfa_ids&quot;: [],
+    &quot;account_id&quot;: &quot;&quot;,
+    &quot;path&quot;: &quot;&#x2F;&quot;,
+    &quot;create_date&quot;: &quot;2025-09-13T09:36:19.387432Z&quot;,
+    &quot;tags&quot;: [],
+    &quot;group_ids&quot;: []
+}
+
+</code></pre>
+<ul>
+<li>gives <code>access key</code> and <code>secret key</code></li>
+<li>install <code>python3-boto3</code></li>
+</ul>
+<pre><code>import boto3
+
+endpoint = &quot;&quot; # enter the endpoint URL along with the port &quot;http:&#x2F;&#x2F;URL:PORT&quot;
+
+access_key = &#x27;ACCESS&#x27;
+secret_key = &#x27;SECRET&#x27;
+
+s3 = boto3.client(
+        &#x27;s3&#x27;,
+        endpoint_url=endpoint,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key
+        )
+
+s3.create_bucket(Bucket=&#x27;my-new-bucket&#x27;)
+
+response = s3.list_buckets()
+for bucket in response[&#x27;Buckets&#x27;]:
+    print(&quot;{name}\t{created}&quot;.format(
+		name = bucket[&#x27;Name&#x27;],
+		created = bucket[&#x27;CreationDate&#x27;]
+))
+</code></pre>
+<h4 id="ceph-block-storage">ceph block storage</h4>
+<ul>
+<li>create pool, enable rbd and  Initialize pool for use by RBD.</li>
+</ul>
+<pre><code>ceph osd pool create &lt;poolname(pool1)&gt;
+ceph osd pool application enable &lt;poolname(pool1)&gt; rbd
+rbd pool init -p &lt;poolname(pool1)&gt;
+</code></pre>
+<ul>
+<li>create rbd images and list with info</li>
+</ul>
+<pre><code>rbd create image1 --size &lt;size in MB&gt; --pool &lt;poolname(pool1)&gt;
+rbd --image &lt;image_name&gt; info
+</code></pre>
+<ul>
+<li>maps block image to local device
+<code>rbd map &lt;image-name&gt; --pool &lt;poolname&gt;</code>
+<code>rbd showmapped</code></li>
+</ul>
+<h5 id="share-local-device-block-image-over-nfs">share local device(block image ) over NFS</h5>
+<ul>
+<li>exit cephadm shell</li>
+</ul>
+<pre><code>sudo apt install nfs-kernel-server -y
+mkdir &#x2F;mnt&#x2F;rbd-nfs
+mount &#x2F;dev&#x2F;rbd0 &#x2F;mnt&#x2F;rbd-nfs
+echo &quot;&#x2F;mnt&#x2F;rbd-nfs *(rw,sync,no_root_squash)&quot; | sudo tee -a &#x2F;etc&#x2F;exports
+sudo exportfs -ra
+sudo systemctl restart nfs-kernel-server
+</code></pre>
+<ul>
+<li>on clients</li>
+</ul>
+<pre><code>sudo apt install nfs-common -y
+sudo mount &lt;nfs-server-ip&gt;:&#x2F;mnt&#x2F;rbd-nfs &#x2F;mnt
+df -h | grep nfs
+</code></pre>
+<ul>
+<li>
+<p>check if rbd client is loaded
+<code>modinfo rbd  # Should show module details</code></p>
+</li>
+<li>
+<p>load rbd in client
+<code>sudo modprobe rbd</code></p>
+</li>
+</ul>
+<h4 id="cephfs">CephFs</h4>
+<p><code>ceph fs volume create cephfs</code></p>
+<p>This command creates a CephFS filesystem named "cephfs" with the following:</p>
+<ul>
+<li>
+<p>A metadata pool (cephfs_metadata) – Stores directory structures, file names, permissions, etc.</p>
+</li>
+<li>
+<p>A data pool (cephfs_data) – Stores actual file contents.</p>
+</li>
+<li>
+<p>An MDS daemon – Handles metadata operations (listing directories, permissions, etc.)</p>
+</li>
+<li>
+<p>to create cephfs manually
+<code>ceph fs new cephfs cephfs_metadata cephfs_data</code></p>
+</li>
+<li>
+<p>create subvolume group
+<code>ceph fs subvolumegroup create cephfs mygroup</code></p>
+</li>
+<li>
+<p>create subvolume within the group
+<code>ceph fs subvolume create cephfs mysubvol --group mygroup</code></p>
+</li>
+</ul>
+<h4 id="ceph-authentication">ceph authentication</h4>
+<p><code>ceph auth get-or-create client.libvirt mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=vm-storage' mds 'allow *'</code></p>
+<p>🔹 This creates a user client.myuser with:
+Read (r) access to MONs
+Read/Write (rw) access to the "vm-storage" pool</p>
+<p><code>ceph auth list</code>
+To list all users</p>
+<p><code>ceph auth caps client.libvirt mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=vm-storage' mds 'allow *'</code></p>
+<ul>
+<li>to modify existing user</li>
+</ul>
+<p><code>ceph auth del client.myuser</code></p>
+<ul>
+<li>deletes the user, myuser</li>
+</ul>
+<h5 id="mount-cephfs-on-client">mount cephFS on client</h5>
+<p><code>sudo apt install ceph-fuse -y</code>
+<code>mkdir /mnt/cephfs</code></p>
+<p><code>mount -t ceph &lt;mon-ip&gt;:6789:/ /mnt/cephfs -o name=admin,secret=&lt;ceph-secret&gt;</code></p>
+<p><code>df -h | grep ceph</code></p>
+<h2 id="rook">Rook</h2>
+<ul>
+<li>Testing Bucket Functionality with an S3 Client</li>
+</ul>
+<pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: s3-test-pod
+  namespace: rook-ceph
+spec:
+  containers:
+    - name: s3-client
+      image: registry1.dso.mil&#x2F;ironbank&#x2F;opensource&#x2F;amazon&#x2F;aws-cli:latest
+      command:
+      - &quot;&#x2F;bin&#x2F;sh&quot;
+      - &quot;-c&quot;
+      - |
+        echo &quot;Hello Rook&quot; &gt; &#x2F;tmp&#x2F;rookObj
+        aws s3 cp &#x2F;tmp&#x2F;rookObj s3:&#x2F;&#x2F;ceph-bucket&#x2F;rookObj
+        aws s3 cp s3:&#x2F;&#x2F;ceph-bucket&#x2F;rookObj &#x2F;tmp&#x2F;downloadedObj
+      env:
+        - name: AWS_ACCESS_KEY_ID
+          value: N0QLVUM9ATZQ6ACJEEGH
+        - name: AWS_SECRET_ACCESS_KEY
+          value: 02vPmQwj6n1ZGsEX6FDpqSPhqor6kyI84cMIPYJj
+</code></pre>
+
+      </article>
+
+      
+      
+      <div class="reaction right" data-endpoint="https:&#x2F;&#x2F;wwwaadityapageni.com.np&#x2F;api&#x2F;reaction"></div>
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2026 Aaditya Pageni
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+    
+    
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+
+  <script src="https://www.aadityapageni.com.np/js/main.js"></script>
+</body>
+
+</html>
