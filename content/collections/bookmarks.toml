@@ -1,0 +1,20 @@
+[[collection]]
+type = "box"
+link = "https://johnresig.com/blog/write-code-every-day"
+title = "Write Code Every Day"
+subtitle = "John Resig"
+icon = "https://johnresig.com/favicon.ico"
+
+[[collection]]
+type = "box"
+link = "https://overreacted.io/the-elements-of-ui-engineering"
+title = "The Elements of UI Engineering"
+subtitle = "Dan Abramov"
+icon = "https://overreacted.io/favicon.ico"
+
+[[collection]]
+type = "box"
+link = "https://norvig.com/21-days.html"
+title = "Teach Yourself Programming in Ten Years"
+subtitle = "Peter Norvig"
+icon = "https://norvig.com/favicon.ico"

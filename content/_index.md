@@ -5,12 +5,12 @@ template = 'home.html'
 lang = 'en'
 
 # Show footer in home page
-footer = true
+footer = false
 
 # If you don't want to display id/bio/avatar, simply comment out that line
 name = "Aaditya Pageni"
 id = "apageni"
-bio = "k8s, openstack"
+#bio = "k8s, openstack"
 # avatar = "/img/avatar.gif"
 links = [
     { name = "GitHub", icon = "github", url = "https://github.com/aadityapageni" },
@@ -19,10 +19,10 @@ links = [
 ]
 
 # Show a few recent posts in home page
-recent = false
-recent_max = 15
-recent_more_text = "more »"
-date_format = "%b %-d, %Y"
+recent = true
+recent_max = 3
+recent_more_text = "more"
+date_format = "%-d %b %Y"
 +++
 
-<!-- Hi, I'm ... -->
+wanna talk about openstack, k8s, cricket, or anything else? hit me up!
