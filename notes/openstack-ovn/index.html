@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="~">
+
+  <title>Openstack OVN guide</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.aadityapageni.com.np/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.aadityapageni.com.np/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.aadityapageni.com.np/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://www.aadityapageni.com.np/main.css">
+  
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/hl-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#openstack-neutron-networking-with-ovn-backend">OpenStack Neutron Networking with OVN Backend</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#kolla-ansible-2025-2-epoxy-neutron-plugin-agent-ovn">Kolla Ansible 2025.2 (Epoxy) — neutron_plugin_agent: ovn</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#why-ovn-is-different-from-ovs">Why OVN is Different from OVS</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#1-ovn-architecture-overview">1. OVN Architecture Overview</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#2-component-deep-dive">2. Component Deep Dive</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#3-traffic-flow-diagrams">3. Traffic Flow Diagrams</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#4-ovn-logical-constructs-vs-neutron-objects">4. OVN Logical Constructs vs Neutron Objects</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#5-kolla-ansible-2025-2-ovn-container-set">5. Kolla Ansible 2025.2 OVN Container Set</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#6-debugging-commands">6. Debugging Commands</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#7-physnet-with-ovn-provider-networks">7. physnet with OVN — Provider Networks</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#8-ovs-vs-ovn-quick-comparison">8. OVS vs OVN Quick Comparison</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;notes">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>Openstack OVN guide</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Apr 17, 2026</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://www.aadityapageni.com.np/tags/openstack"><span>#</span>openstack</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <h1 id="openstack-neutron-networking-with-ovn-backend">OpenStack Neutron Networking with OVN Backend</h1>
+<h3 id="kolla-ansible-2025-2-epoxy-neutron-plugin-agent-ovn">Kolla Ansible 2025.2 (Epoxy) — <code>neutron_plugin_agent: ovn</code></h3>
+<hr />
+<h2 id="why-ovn-is-different-from-ovs">Why OVN is Different from OVS</h2>
+<table><thead><tr><th>Feature</th><th>OVS (legacy)</th><th>OVN</th></tr></thead><tbody>
+<tr><td>Tunnel bridge</td><td><code>br-tun</code> (separate bridge)</td><td>❌ No <code>br-tun</code> — tunnels in <code>br-int</code> directly</td></tr>
+<tr><td>Security groups</td><td><code>qbr-xxx</code> Linux bridge + iptables</td><td>✅ Native in OVS flow tables (OVN ACLs)</td></tr>
+<tr><td>Routing</td><td>Network node <code>qrouter</code> namespace</td><td>✅ Distributed in every <code>br-int</code> (no network node needed)</td></tr>
+<tr><td>Tunnel protocol</td><td>VXLAN / GRE</td><td><strong>Geneve</strong> (port 6081)</td></tr>
+<tr><td>Agent</td><td><code>neutron-openvswitch-agent</code></td><td><strong><code>ovn-controller</code></strong> (not a Neutron agent)</td></tr>
+<tr><td>DHCP</td><td><code>neutron-dhcp-agent</code> daemon</td><td>✅ OVN native DHCP (no daemon needed)</td></tr>
+<tr><td>Control plane</td><td>ML2 + OVS agent</td><td><strong>ML2 OVN mechanism driver → OVN NB DB</strong></td></tr>
+<tr><td>L3 agent</td><td>Required</td><td>❌ Optional / eliminated</td></tr>
+</tbody></table>
+<hr />
+<h2 id="1-ovn-architecture-overview">1. OVN Architecture Overview</h2>
+<p><img src="https://www.aadityapageni.com.np/notes/openstack-ovn/./images/ovn_architecture.png" alt="OVN Architecture in Kolla Ansible" /></p>
+<p>OVN operates in two planes:</p>
+<h3 id="control-plane-runs-on-controllers">Control Plane (runs on controllers)</h3>
+<pre><code>neutron-server
+  └── ML2 OVN mechanism driver
+        └── OVN NB DB (Northbound Database)   ← logical model
+              └── ovn-northd
+                    └── OVN SB DB (Southbound Database)  ← physical flows
+</code></pre>
+<h3 id="data-plane-runs-on-every-compute-node">Data Plane (runs on every compute node)</h3>
+<pre><code>OVN SB DB
+  └── ovn-controller  ← reads logical flows, programs OVS
+        └── br-int (OVS)  ← executes OpenFlow rules
+              ├── tap-xxx  (VM ports)
+              ├── geneve tunnel ports  (to other nodes)
+              └── patch to br-ex  (external&#x2F;provider)
+</code></pre>
+<hr />
+<h2 id="2-component-deep-dive">2. Component Deep Dive</h2>
+<h3 id="2-1-ovn-northbound-database-nb-db">2.1 OVN Northbound Database (NB DB)</h3>
+<p>The <strong>logical model</strong> of your network. Written to by <code>neutron-server</code> via the ML2 OVN driver.</p>
+<p><strong>Key tables:</strong></p>
+<table><thead><tr><th>Table</th><th>Contains</th></tr></thead><tbody>
+<tr><td><code>Logical_Switch</code></td><td>Neutron networks</td></tr>
+<tr><td><code>Logical_Switch_Port</code></td><td>Neutron ports (VM VIFs, DHCP, router)</td></tr>
+<tr><td><code>Logical_Router</code></td><td>Neutron routers</td></tr>
+<tr><td><code>Logical_Router_Port</code></td><td>Router interfaces</td></tr>
+<tr><td><code>ACL</code></td><td>Security group rules</td></tr>
+<tr><td><code>NAT</code></td><td>Floating IPs (SNAT/DNAT rules)</td></tr>
+<tr><td><code>Load_Balancer</code></td><td>Octavia / Neutron LBaaS</td></tr>
+</tbody></table>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Inspect NB DB (run inside ovn-nb container or on controller)
+ovn-nbctl show
+ovn-nbctl list Logical_Switch
+ovn-nbctl list Logical_Router
+ovn-nbctl list ACL
+ovn-nbctl list NAT
+</code></pre>
+<hr />
+<h3 id="2-2-ovn-southbound-database-sb-db">2.2 OVN Southbound Database (SB DB)</h3>
+<p>The <strong>physical/flow model</strong> — compiled by <code>ovn-northd</code> from NB DB.</p>
+<p><strong>Key tables:</strong></p>
+<table><thead><tr><th>Table</th><th>Contains</th></tr></thead><tbody>
+<tr><td><code>Datapath_Binding</code></td><td>Tunnel key per logical switch/router</td></tr>
+<tr><td><code>Port_Binding</code></td><td>Maps logical ports to physical chassis</td></tr>
+<tr><td><code>Logical_Flow</code></td><td>OpenFlow-like match/action rules</td></tr>
+<tr><td><code>MAC_Binding</code></td><td>ARP/ND cache</td></tr>
+<tr><td><code>Chassis</code></td><td>Each compute/network node</td></tr>
+<tr><td><code>BFD</code></td><td>Tunnel liveness detection</td></tr>
+</tbody></table>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ovn-sbctl show
+ovn-sbctl list Chassis
+ovn-sbctl list Port_Binding
+ovn-sbctl list Logical_Flow | head -50
+</code></pre>
+<hr />
+<h3 id="2-3-ovn-northd-the-compiler">2.3 <code>ovn-northd</code> — The Compiler</h3>
+<p>Translates <strong>NB DB → SB DB logical flows</strong>. Runs on controller nodes (usually 3 for HA).</p>
+<ul>
+<li>Listens to changes in NB DB</li>
+<li>Computes logical flows and physical bindings</li>
+<li>Writes to SB DB</li>
+<li>No data plane involvement</li>
+</ul>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Kolla container
+docker exec ovn_northd ovn-northd --help
+docker logs ovn_northd
+</code></pre>
+<hr />
+<h3 id="2-4-ovn-controller-the-data-plane-agent">2.4 <code>ovn-controller</code> — The Data Plane Agent</h3>
+<p>Runs on <strong>every compute node</strong> (and gateway nodes). Not a Neutron agent — it's an OVN daemon.</p>
+<ul>
+<li>Watches SB DB for its chassis's bindings</li>
+<li>Translates logical flows into <strong>OVS OpenFlow rules</strong> in <code>br-int</code></li>
+<li>Manages Geneve tunnel interfaces between chassis</li>
+</ul>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># On compute node
+docker exec ovn_controller ovn-controller --help
+docker logs ovn_controller
+
+# Check chassis registration
+ovn-sbctl show  # look for Chassis entries
+</code></pre>
+<hr />
+<h3 id="2-5-br-int-the-integration-bridge-ovn-style">2.5 <code>br-int</code> — The Integration Bridge (OVN style)</h3>
+<p>Still exists as an <strong>OVS bridge</strong>, but is far more powerful than in OVS-agent mode.</p>
+<pre><code>br-int responsibilities (OVN):
+  ✓ VM port attachment (tap-xxx)
+  ✓ Geneve tunnel endpoints (no br-tun!)
+  ✓ Distributed L2 switching (logical switch flows)
+  ✓ Distributed L3 routing (logical router flows)
+  ✓ Security group ACLs (OVN ACL → OVS flows)
+  ✓ DHCP reply generation (OVN native DHCP)
+  ✓ Floating IP DNAT&#x2F;SNAT (distributed, no qrouter)
+  ✓ Load balancing (OVN native LB)
+</code></pre>
+<blockquote>
+<p>[!IMPORTANT]
+In OVN, <code>br-int</code> does <strong>everything</strong> that OVS used <code>br-int + br-tun + qrouter namespace</code> for. The routing happens inside br-int via logical flow tables — no separate network node needed for East-West or floating IPs.</p>
+</blockquote>
+<p><strong>Ports in OVN br-int:</strong></p>
+<table><thead><tr><th>Port</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>tap-xxx</code></td><td>VM virtual NIC (directly in br-int, no qbr!)</td></tr>
+<tr><td><code>ovn-&lt;chassis&gt;-0</code></td><td>Geneve tunnel to a remote chassis</td></tr>
+<tr><td><code>patch-br-int-to-provnet-xxx</code></td><td>Patch to br-ex for provider/external nets</td></tr>
+</tbody></table>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ovs-vsctl list-ports br-int
+# You will see: tap-xxx, ovn-XXXXXX-0, patch-...
+
+ovs-ofctl dump-flows br-int | head -40
+</code></pre>
+<hr />
+<h3 id="2-6-tap-xxx-vm-port-direct-no-qbr">2.6 <code>tap-xxx</code> — VM Port (Direct, No qbr!)</h3>
+<p>Same TAP device as OVS mode, but now plugged <strong>directly into <code>br-int</code></strong> — no <code>qbr-xxx</code> Linux bridge in between.</p>
+<pre><code>VM (Guest OS)
+  └── vNIC
+        └── tap-a1b2c3d4  → directly into br-int
+</code></pre>
+<p>Security groups are enforced via <strong>OVN ACL → OVS conntrack flows</strong> directly on the port in <code>br-int</code>.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Find tap devices
+ip link show | grep tap
+
+# Correlate to Neutron port (port UUID prefix)
+openstack port show &lt;uuid&gt;
+# tap device = &quot;tap&quot; + first 11 chars of port UUID
+</code></pre>
+<hr />
+<h3 id="2-7-geneve-tunnels-replaces-br-tun">2.7 Geneve Tunnels (Replaces <code>br-tun</code>)</h3>
+<p>OVN uses <strong>Geneve</strong> (Generic Network Virtualization Encapsulation) on UDP port <strong>6081</strong> for all tunnel traffic between chassis.</p>
+<ul>
+<li>Tunnels originate and terminate directly on <code>br-int</code></li>
+<li>Tunnel ports named: <code>ovn-&lt;chassis-id&gt;-0</code></li>
+<li>Tunnel key (24-bit) = SB DB <code>Datapath_Binding.tunnel_key</code></li>
+</ul>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># List Geneve tunnel ports on a compute node
+ovs-vsctl list-ports br-int | grep ovn
+
+# Inspect tunnel port config
+ovs-vsctl list interface ovn-abc123-0
+# type: geneve, remote_ip: &lt;other compute IP&gt;
+
+# Check BFD (tunnel liveness)
+ovs-vsctl list BFD
+</code></pre>
+<hr />
+<h3 id="2-8-br-ex-external-bridge">2.8 <code>br-ex</code> — External Bridge</h3>
+<p>Unchanged from OVS mode — still an <strong>OVS bridge</strong> connected to the physical NIC for external/provider networks.</p>
+<pre><code>br-ex responsibilities:
+  ✓ External network access (floating IP traffic)
+  ✓ Provider networks (flat&#x2F;VLAN)
+  ✓ Connected to physnet1&#x2F;eth1
+</code></pre>
+<p><strong>OVN patch ports to br-ex (different naming from OVS):</strong></p>
+<table><thead><tr><th>Port</th><th>Where</th></tr></thead><tbody>
+<tr><td><code>patch-br-int-to-provnet-&lt;net-uuid&gt;</code></td><td>br-int side</td></tr>
+<tr><td><code>patch-provnet-&lt;net-uuid&gt;-to-br-ex</code></td><td>br-ex side</td></tr>
+<tr><td><code>eth1</code> / <code>ens3</code></td><td>Physical NIC attached to br-ex</td></tr>
+</tbody></table>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ovs-vsctl list-ports br-ex
+# Should show: eth1, patch-provnet-xxx-to-br-ex
+</code></pre>
+<blockquote>
+<p>[!TIP]
+In OVN, <strong>distributed floating IPs</strong> means DNAT/SNAT happens on the <strong>compute node itself</strong>, not on a dedicated network node. Each compute node with a VM that has a floating IP will handle the NAT in its own <code>br-int</code>.</p>
+</blockquote>
+<hr />
+<h3 id="2-9-physnet-physical-network-mapping">2.9 <code>physnet</code> — Physical Network Mapping</h3>
+<p>Same logical concept as OVS, but configured slightly differently.</p>
+<p><strong><code>globals.yml</code> (Kolla):</strong></p>
+<pre data-lang="yaml" class="language-yaml "><code class="language-yaml" data-lang="yaml">network_interface: &quot;eth0&quot;
+neutron_external_interface: &quot;eth1&quot;    # Physical NIC → br-ex
+neutron_plugin_agent: &quot;ovn&quot;           # ← KEY SETTING
+</code></pre>
+<p><strong>Auto-generated <code>ml2_conf.ini</code> by Kolla:</strong></p>
+<pre data-lang="ini" class="language-ini "><code class="language-ini" data-lang="ini">[ml2]
+mechanism_drivers = ovn
+type_drivers = local,flat,vlan,geneve
+
+[ml2_type_geneve]
+vni_ranges = 1:65536
+max_header_size = 38
+
+[ml2_type_flat]
+flat_networks = physnet1
+
+[ml2_type_vlan]
+network_vlan_ranges = physnet1:100:200
+
+[ovn]
+ovn_nb_connection = tcp:10.0.0.10:6641
+ovn_sb_connection = tcp:10.0.0.10:6642
+ovn_l3_scheduler = leastloaded
+enable_distributed_floating_ip = true
+</code></pre>
+<p><strong><code>ovn_metadata_agent.ini</code>:</strong></p>
+<pre data-lang="ini" class="language-ini "><code class="language-ini" data-lang="ini">[DEFAULT]
+nova_metadata_host = &lt;controller-ip&gt;
+
+[ovn]
+ovn_sb_connection = tcp:10.0.0.10:6642
+</code></pre>
+<hr />
+<h2 id="3-traffic-flow-diagrams">3. Traffic Flow Diagrams</h2>
+<p><img src="../notes/images/ovn_traffic_flow.png" alt="OVN Traffic Flow — East-West and North-South" /></p>
+<h3 id="3-1-east-west-vm-to-vm-different-compute-nodes">3.1 East-West (VM to VM, different compute nodes)</h3>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">sequenceDiagram
+    participant VM1 as VM1 (Compute-1)
+    participant tap1 as tap-aaa (in br-int)
+    participant brint1 as br-int OVS flows (Compute-1)
+    participant gen1 as Geneve port ovn-XXX-0
+    participant net as Underlay IP Network
+    participant gen2 as Geneve port ovn-YYY-0
+    participant brint2 as br-int OVS flows (Compute-2)
+    participant tap2 as tap-bbb (in br-int)
+    participant VM2 as VM2 (Compute-2)
+
+    VM1-&gt;&gt;tap1: send packet
+    tap1-&gt;&gt;brint1: OVN logical switch flows (L2 lookup)
+    brint1-&gt;&gt;gen1: encapsulate Geneve (tunnel_key = VNI)
+    gen1-&gt;&gt;net: UDP 6081 packet
+    net-&gt;&gt;gen2: received at compute-2
+    gen2-&gt;&gt;brint2: decap Geneve, lookup tunnel_key → logical switch
+    brint2-&gt;&gt;tap2: OVN L2 delivery
+    tap2-&gt;&gt;VM2: packet delivered
+</code></pre>
+<h3 id="3-2-north-south-with-distributed-floating-ip">3.2 North-South with Distributed Floating IP</h3>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">sequenceDiagram
+    participant VM as VM (Compute Node)
+    participant tap as tap-xxx → br-int
+    participant brint as br-int (OVN L3 + NAT flows)
+    participant brex as br-ex (patch-provnet-xxx)
+    participant eth1 as eth1 &#x2F; physnet1
+    participant internet as Internet
+
+    VM-&gt;&gt;tap: send packet (private IP src)
+    tap-&gt;&gt;brint: OVN ingress pipeline
+    brint-&gt;&gt;brint: NAT rule: private IP → floating IP (SNAT)
+    brint-&gt;&gt;brex: patch-br-int-to-provnet-xxx
+    brex-&gt;&gt;eth1: phy-br-ex or direct NIC
+    eth1-&gt;&gt;internet: packet with floating IP src
+    internet--&gt;&gt;eth1: reply to floating IP
+    eth1--&gt;&gt;brex: incoming
+    brex--&gt;&gt;brint: patch back
+    brint--&gt;&gt;brint: DNAT: floating IP → private IP
+    brint--&gt;&gt;tap: deliver to VM
+</code></pre>
+<h3 id="3-3-ovn-full-component-map">3.3 OVN Full Component Map</h3>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">graph TD
+    subgraph CP [&quot;Control Plane (Controller Nodes)&quot;]
+        NS[&quot;neutron-server&quot;] --&gt;|ML2 OVN driver| NBDB[&quot;OVN NB DB\n(Logical model)&quot;]
+        NBDB --&gt; NND[&quot;ovn-northd&quot;]
+        NND --&gt; SBDB[&quot;OVN SB DB\n(Physical flows)&quot;]
+    end
+
+    subgraph CN1 [&quot;Compute Node&quot;]
+        OC[&quot;ovn-controller&quot;] --&gt;|reads| SBDB
+        OC --&gt;|programs| BRINT
+
+        VM[&quot;🖥️ VM&quot;]
+        TAP[&quot;tap-xxx (direct in br-int)&quot;]
+        BRINT[&quot;br-int (OVS)\nL2 switch + L3 router + ACL + NAT + DHCP&quot;]
+        GEN[&quot;ovn-chassis-0\nGeneve tunnel port&quot;]
+        PBRINT[&quot;patch-br-int-to-provnet-xxx&quot;]
+        BREX[&quot;br-ex (OVS external)&quot;]
+        ETH1[&quot;eth1 &#x2F; physnet1&quot;]
+        EXT[&quot;External Network&quot;]
+
+        VM --&gt; TAP
+        TAP --&gt; BRINT
+        BRINT --&gt; GEN
+        BRINT --&gt; PBRINT
+        PBRINT --&gt; BREX
+        BREX --&gt; ETH1
+        ETH1 --&gt; EXT
+    end
+
+    GEN -- &quot;Geneve UDP 6081&quot; --&gt; GEN2
+
+    subgraph CN2 [&quot;Compute Node 2&quot;]
+        GEN2[&quot;ovn-chassis-0\nGeneve tunnel port&quot;]
+        BRINT2[&quot;br-int (OVS)&quot;]
+        TAP2[&quot;tap-yyy&quot;]
+        VM2[&quot;🖥️ VM2&quot;]
+
+        GEN2 --&gt; BRINT2
+        BRINT2 --&gt; TAP2
+        TAP2 --&gt; VM2
+    end
+
+    style BRINT fill:#3B82F6,color:#fff
+    style BRINT2 fill:#3B82F6,color:#fff
+    style BREX fill:#F97316,color:#fff
+    style NBDB fill:#22C55E,color:#fff
+    style SBDB fill:#22C55E,color:#fff
+    style OC fill:#A855F7,color:#fff
+    style NND fill:#A855F7,color:#fff
+</code></pre>
+<hr />
+<h2 id="4-ovn-logical-constructs-vs-neutron-objects">4. OVN Logical Constructs vs Neutron Objects</h2>
+<table><thead><tr><th>Neutron Object</th><th>OVN NB DB Object</th></tr></thead><tbody>
+<tr><td>Network</td><td><code>Logical_Switch</code></td></tr>
+<tr><td>Subnet (DHCP)</td><td><code>DHCP_Options</code></td></tr>
+<tr><td>Port</td><td><code>Logical_Switch_Port</code></td></tr>
+<tr><td>Router</td><td><code>Logical_Router</code></td></tr>
+<tr><td>Router interface</td><td><code>Logical_Router_Port</code></td></tr>
+<tr><td>Security group rule</td><td><code>ACL</code></td></tr>
+<tr><td>Floating IP</td><td><code>NAT</code> (type=dnat_and_snat)</td></tr>
+<tr><td>SNAT</td><td><code>NAT</code> (type=snat)</td></tr>
+<tr><td>Load balancer</td><td><code>Load_Balancer</code></td></tr>
+</tbody></table>
+<hr />
+<h2 id="5-kolla-ansible-2025-2-ovn-container-set">5. Kolla Ansible 2025.2 OVN Container Set</h2>
+<pre><code>Controller&#x2F;Network nodes:
+  ├── ovn_nb_db          ← OVN Northbound OVSDB server
+  ├── ovn_sb_db          ← OVN Southbound OVSDB server
+  ├── ovn_northd         ← ovn-northd compiler daemon
+  ├── neutron_server     ← with ML2 OVN mechanism driver
+  └── ovn_metadata_agent ← VM metadata proxy (replaces neutron-metadata-agent)
+
+Compute nodes:
+  ├── ovn_controller     ← ovn-controller daemon
+  ├── openvswitch_db     ← OVS DB on host
+  └── openvswitch_vswitchd ← OVS forwarding on host
+</code></pre>
+<blockquote>
+<p>[!NOTE]
+In OVN mode, the following legacy containers are <strong>NOT deployed</strong>:</p>
+<ul>
+<li><code>neutron_openvswitch_agent</code> ❌</li>
+<li><code>neutron_l3_agent</code> ❌ (routing is distributed)</li>
+<li><code>neutron_dhcp_agent</code> ❌ (OVN native DHCP)</li>
+</ul>
+</blockquote>
+<h3 id="key-kolla-globals-yml-for-ovn">Key Kolla <code>globals.yml</code> for OVN</h3>
+<pre data-lang="yaml" class="language-yaml "><code class="language-yaml" data-lang="yaml">neutron_plugin_agent: &quot;ovn&quot;
+
+# OVN HA (3 controllers recommended)
+om_enable_haproxy_keepalived: &quot;yes&quot;
+
+# Distributed floating IPs (default in 2025.2)
+# Set in &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;neutron&#x2F;ml2_conf.ini:
+# [ovn]
+# enable_distributed_floating_ip = true
+</code></pre>
+<hr />
+<h2 id="6-debugging-commands">6. Debugging Commands</h2>
+<h3 id="ovn-control-plane">OVN Control Plane</h3>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Show full logical topology
+ovn-nbctl show
+
+# List all chassis (compute nodes)
+ovn-sbctl list Chassis
+
+# List port bindings (which port is on which chassis)
+ovn-sbctl list Port_Binding
+
+# Show logical flows (the &quot;compiled&quot; rules)
+ovn-sbctl lflow-list
+
+# Show logical flows for a specific logical switch
+ovn-nbctl list Logical_Switch
+ovn-sbctl lflow-list &lt;switch-uuid&gt;
+
+# Check NAT rules (floating IPs)
+ovn-nbctl list NAT
+
+# ACL rules (security groups)
+ovn-nbctl list ACL
+</code></pre>
+<h3 id="ovn-data-plane-on-compute-node">OVN Data Plane (on compute node)</h3>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Check ovn-controller status
+ovs-vsctl get Open_vSwitch . external_ids
+# Look for: ovn-remote, ovn-encap-ip, ovn-encap-type=geneve
+
+# List all OVS ports (no qbr, no br-tun!)
+ovs-vsctl list-ports br-int
+
+# Check Geneve tunnels
+ovs-vsctl list-ports br-int | grep ovn
+
+# Check OVS flows (very detailed — OVN programs these)
+ovs-ofctl dump-flows br-int
+
+# Trace a packet through OVN (simulated)
+ovn-trace &lt;logical-switch&gt; &#x27;inport==&quot;&lt;lsp-name&gt;&quot;, eth.src==&lt;mac&gt;, ip4.src==&lt;ip&gt;&#x27;
+
+# Physical trace through OVS
+ovs-appctl ofproto&#x2F;trace br-int in_port=&lt;port&gt;,dl_src=&lt;mac&gt;
+</code></pre>
+<h3 id="kolla-container-access">Kolla Container Access</h3>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># On controller
+docker exec ovn_nb_db ovn-nbctl show
+docker exec ovn_sb_db ovn-sbctl show
+docker logs ovn_northd
+
+# On compute node
+docker exec ovn_controller ovs-vsctl show
+docker logs ovn_controller
+</code></pre>
+<hr />
+<h2 id="7-physnet-with-ovn-provider-networks">7. physnet with OVN — Provider Networks</h2>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">graph LR
+    A[&quot;physnet1 (logical label)&quot;] --&gt;|&quot;[ovn] bridge_mappings&quot;| B[&quot;br-ex (OVS)&quot;]
+    B --&gt; C[&quot;eth1 (physical NIC)&quot;]
+    C --&gt; D[&quot;Physical switch &#x2F; VLAN trunk&quot;]
+
+    E[&quot;neutron net-create\n--provider-network-type flat\n--provider-physical-network physnet1&quot;] --&gt; A
+</code></pre>
+<p><strong><code>/etc/kolla/config/neutron/ml2_conf.ini</code>:</strong></p>
+<pre data-lang="ini" class="language-ini "><code class="language-ini" data-lang="ini">[ovs]
+bridge_mappings = physnet1:br-ex
+
+[ovn]
+ovn_nb_connection = tcp:10.0.0.10:6641
+ovn_sb_connection = tcp:10.0.0.10:6642
+enable_distributed_floating_ip = true
+</code></pre>
+<p><strong>Multiple physnets:</strong></p>
+<pre data-lang="ini" class="language-ini "><code class="language-ini" data-lang="ini">[ovs]
+bridge_mappings = physnet1:br-ex,physnet2:br-provider2
+
+# Also need:
+# neutron_external_interface: &quot;eth1,eth2&quot;
+# or create br-provider2 manually and add eth2
+</code></pre>
+<hr />
+<h2 id="8-ovs-vs-ovn-quick-comparison">8. OVS vs OVN Quick Comparison</h2>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">graph LR
+    subgraph OVS [&quot;OVS Agent Mode (legacy)&quot;]
+        direction TB
+        V1[&quot;VM&quot;] --&gt; T1[&quot;tap → qbr → qvo&quot;]
+        T1 --&gt; B1[&quot;br-int&quot;]
+        B1 --&gt; BT[&quot;br-tun (VXLAN)&quot;]
+        B1 --&gt; BE1[&quot;br-ex&quot;]
+        B1 --&gt; QR[&quot;qrouter namespace\n(network node only)&quot;]
+    end
+
+    subgraph OVN [&quot;OVN Mode (2025.2 default)&quot;]
+        direction TB
+        V2[&quot;VM&quot;] --&gt; T2[&quot;tap (direct)&quot;]
+        T2 --&gt; B2[&quot;br-int\n(L2+L3+ACL+NAT+DHCP+LB)&quot;]
+        B2 --&gt; GEN[&quot;Geneve tunnel\n(in br-int)&quot;]
+        B2 --&gt; BE2[&quot;br-ex&quot;]
+    end
+
+    style B1 fill:#3B82F6,color:#fff
+    style BT fill:#22C55E,color:#fff
+    style BE1 fill:#F97316,color:#fff
+    style B2 fill:#3B82F6,color:#fff
+    style BE2 fill:#F97316,color:#fff
+    style QR fill:#EF4444,color:#fff
+</code></pre>
+<table><thead><tr><th></th><th>OVS</th><th>OVN</th></tr></thead><tbody>
+<tr><td><code>br-tun</code></td><td>✅ Present</td><td>❌ Gone</td></tr>
+<tr><td><code>qbr-xxx</code></td><td>✅ Present</td><td>❌ Gone</td></tr>
+<tr><td><code>qrouter</code> namespace</td><td>✅ Network node</td><td>❌ Distributed in br-int</td></tr>
+<tr><td>Tunnel protocol</td><td>VXLAN (4789)</td><td><strong>Geneve (6081)</strong></td></tr>
+<tr><td>DHCP agent</td><td>Required</td><td><strong>OVN native</strong></td></tr>
+<tr><td>L3 agent</td><td>Required</td><td><strong>Not needed</strong></td></tr>
+<tr><td>Agent name</td><td><code>neutron-openvswitch-agent</code></td><td><strong><code>ovn-controller</code></strong></td></tr>
+</tbody></table>
+<hr />
+<p><em>Document generated for OpenStack 2025.2 (Epoxy) with Kolla Ansible and OVN ML2 driver.</em></p>
+
+      </article>
+
+      
+      
+      <div class="reaction right" data-endpoint="https:&#x2F;&#x2F;wwwaadityapageni.com.np&#x2F;api&#x2F;reaction"></div>
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2025 Aaditya Pageni
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+
+  <script src="https://www.aadityapageni.com.np/js/main.js"></script>
+</body>
+
+</html>
