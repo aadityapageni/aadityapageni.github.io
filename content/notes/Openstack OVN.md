@@ -3,6 +3,8 @@ title = "Openstack OVN guide"
 date = 2026-04-17
 [taxonomies]
 tags = ["openstack"]
+[extra]
+mermaid = true
 +++
 
 # OpenStack Neutron Networking with OVN Backend

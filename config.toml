@@ -39,6 +39,7 @@ anchors = "on"
 #=========================================================================================
 
 [extra]
+highlight_theme = "css"
 
 sections = [
   { name = "posts", path = "posts", is_external = false },
@@ -46,7 +47,7 @@ sections = [
   # { name = "tags", path = "tags", is_external = false },
   # { name = "github", path = "https://github.com/aadityapageni", is_external = true },
 ]
-blog_section_path = "notes"
+blog_section_path = "posts"
 
 back_link_text = "Back" # Text of the back button
 force_theme = false # false | "light" | "dark"
