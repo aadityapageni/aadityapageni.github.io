@@ -197,7 +197,7 @@ Enter &#x27;help&#x27; for a list of built-in commands.
 
 (initramfs)
 </code></pre>
-<p><img src="https://www.aadityapageni.com.np/posts/ceph-blocklist/.images/vm-io-error.png" alt="VM console showing I/O errors and initramfs shell" /></p>
+<p><img src="/img/posts/vm-io-error.png" alt="VM console showing I/O errors and initramfs shell" /></p>
 <p>The VMs couldn't read their own disks. But here's the thing that made it confusing: <em>new</em> VMs worked perfectly. We could create a fresh instance, attach a volume, boot it up, no issues. Only the VMs that existed before the outage were affected.</p>
 <p>That ruled out network problems, OSD failures, and pool corruption. Something was specifically wrong with the <em>relationship</em> between old VMs and their storage.</p>
 <h2 id="down-the-rabbit-hole">Down the Rabbit Hole</h2>
@@ -309,7 +309,6 @@ rbd_io_timeout = 30
 </li>
 </ol>
 <hr />
-<p><em>This incident occurred in a production Kolla-Ansible OpenStack deployment with Ceph Reef as the storage backend. Total downtime for existing VMs: ~2 hours from power restoration to full recovery. No data was lost.</em></p>
 
       </article>
 
