@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="~">
+
+  <title>Openstack Instance I&#x2F;O Bufffer Error :  A Ceph Blocklist Story</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.aadityapageni.com.np/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.aadityapageni.com.np/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.aadityapageni.com.np/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://www.aadityapageni.com.np/main.css">
+  
+
+<link id="hl" rel="stylesheet" type="text/css" href="/hl-light.css" />
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/hl-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#openstack-instance-i-o-bufffer-error-a-ceph-blocklist-story">Openstack Instance I&#x2F;O Bufffer Error :  A Ceph Blocklist Story</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#my-vm-won-t-start">&quot;My VM won&#x27;t start&quot;</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#down-the-rabbit-hole">Down the Rabbit Hole</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#the-fix">The Fix</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#preventing-this-next-time">Preventing This Next Time</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#lessons-learned">Lessons Learned</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>Openstack Instance I&#x2F;O Bufffer Error :  A Ceph Blocklist Story</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">May 8, 2026</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://www.aadityapageni.com.np/tags/openstack"><span>#</span>openstack</a><a class="instant" href="https://www.aadityapageni.com.np/tags/ceph"><span>#</span>ceph</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <h1 id="openstack-instance-i-o-bufffer-error-a-ceph-blocklist-story">Openstack Instance I/O Bufffer Error :  A Ceph Blocklist Story</h1>
+<p>It was a Monday morning when the power came back on. The UPS had held for as long as it could, but eventually the entire rack went dark. Ceph monitors, OSDs, compute nodes, everything. When the machines came back up, the cluster looked healthy. Ceph reported <code>HEALTH_OK</code>. OpenStack services were running. We even spun up a test VM and it booted fine.</p>
+<p>Then the tickets started rolling in.</p>
+<h2 id="my-vm-won-t-start">"My VM won't start"</h2>
+<p>Every existing VM in the environment was dead. Not just unresponsive, they were dropping into initramfs with I/O errors before even reaching the root filesystem. The console output was a wall of BusyBox messages ending with the dreaded:</p>
+<pre><code>No init found. Try passing init= bootarg.
+
+BusyBox v1.36.1 (Ubuntu 1:1.36.1-6ubuntu3.1) built-in shell (ash)
+Enter &#x27;help&#x27; for a list of built-in commands.
+
+(initramfs)
+</code></pre>
+<p><img src="https://www.aadityapageni.com.np/posts/ceph-blocklist/.images/vm-io-error.png" alt="VM console showing I/O errors and initramfs shell" /></p>
+<p>The VMs couldn't read their own disks. But here's the thing that made it confusing: <em>new</em> VMs worked perfectly. We could create a fresh instance, attach a volume, boot it up, no issues. Only the VMs that existed before the outage were affected.</p>
+<p>That ruled out network problems, OSD failures, and pool corruption. Something was specifically wrong with the <em>relationship</em> between old VMs and their storage.</p>
+<h2 id="down-the-rabbit-hole">Down the Rabbit Hole</h2>
+<p>If you've worked with Ceph and RBD long enough, you develop a sixth sense for lock issues. Ceph's RBD exclusive locking is a safety mechanism. It prevents two clients from writing to the same image simultaneously, which would cause corruption. When a compute node connects to an RBD volume, it acquires an exclusive lock. When it disconnects cleanly, it releases it.</p>
+<p>But our compute nodes didn't disconnect cleanly. They lost power.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">$ ceph osd blocklist ls
+10.88.10.91:0&#x2F;3853293677 2026-05-06T08:59:47.102488+0000
+10.88.10.90:0&#x2F;316670229 2026-05-07T00:26:11.581329+0000
+10.88.10.90:0&#x2F;3783311129 2026-05-07T00:26:11.581329+0000
+...
+listed 14 entries
+</code></pre>
+<p>There it was. Both compute nodes, <code>10.88.10.90</code> and <code>10.88.10.91</code>, were on Ceph's blocklist. When a client crashes without releasing its locks, Ceph blocklists it to prevent a zombie process from coming back and corrupting data. It's the right thing to do. But it also means that when those same nodes come back online with fresh processes, Ceph treats them as untrusted.</p>
+<p>The old locks were still held by client IDs that no longer existed, on nodes that were now blocklisted. A perfect deadlock: the VMs needed the locks to boot, but the locks were held by ghosts.</p>
+<h2 id="the-fix">The Fix</h2>
+<h3 id="confirming-the-theory">Confirming the Theory</h3>
+<p>We picked one affected volume and checked its lock state:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">$ rbd lock list --pool volumes --image volume-48ed0d20-f065-4536-b3f2-eac5f3abc5be
+
+There is 1 exclusive lock on this image.
+Locker          ID                    Address
+client.3406724  auto 135766063836400  10.88.10.91:0&#x2F;3853293677
+</code></pre>
+<p>The address matched a blocklisted entry. The lock was held by a client that would never come back to release it.</p>
+<h3 id="breaking-the-lock">Breaking the Lock</h3>
+<p>The syntax for force-removing an RBD lock is not intuitive (we hit <code>rbd: unrecognised option '--locker'</code> before finding the right incantation):</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">rbd lock remove volumes&#x2F;volume-48ed0d20-f065-4536-b3f2-eac5f3abc5be \
+  &quot;auto 135766063836400&quot; &quot;client.3406724&quot;
+</code></pre>
+<p>Positional arguments. Quotes around the lock ID because it contains a space. We verified:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">$ rbd lock list --pool volumes --image volume-48ed0d20-f065-4536-b3f2-eac5f3abc5be
+No locks on this image.
+</code></pre>
+<p>Rebooted the VM. It came up clean.</p>
+<h3 id="scaling-it-up">Scaling It Up</h3>
+<p>We had dozens of affected volumes. Doing this one by one wasn't going to work. Here's the script that saved our morning:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">for vol in $(rbd ls volumes); do
+  locks=$(rbd lock list volumes&#x2F;$vol 2&gt;&#x2F;dev&#x2F;null)
+  if echo &quot;$locks&quot; | grep -q &quot;client&quot;; then
+    echo &quot;Removing lock on: $vol&quot;
+    lock_id=$(rbd lock list volumes&#x2F;$vol | awk &#x27;NR==3{print $2&quot; &quot;$3}&#x27;)
+    locker=$(rbd lock list volumes&#x2F;$vol | awk &#x27;NR==3{print $1}&#x27;)
+    rbd lock remove volumes&#x2F;$vol &quot;$lock_id&quot; &quot;$locker&quot;
+    echo &quot;Done: $vol&quot;
+  fi
+done
+</code></pre>
+<p>Then a hard reboot across the fleet:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">for vm in $(openstack server list --all-projects -f value -c ID); do
+  name=$(openstack server show $vm -f value -c name)
+  status=$(openstack server show $vm -f value -c status)
+  echo &quot;Rebooting: $name ($vm) - Current status: $status&quot;
+  openstack server reboot --hard $vm
+done
+</code></pre>
+<p>Every VM came back.</p>
+<h3 id="clearing-the-blocklist">Clearing the Blocklist</h3>
+<p>After confirming all locks were released and VMs were healthy, we cleared the blocklist entries for the compute nodes:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ceph osd blocklist rm 10.88.10.90
+ceph osd blocklist rm 10.88.10.91
+</code></pre>
+<p>A word of caution here: only do this after you're certain the crashed nodes won't come back online with stale state. If a zombie process reconnects while another client holds the lock, you're looking at potential data corruption.</p>
+<h2 id="preventing-this-next-time">Preventing This Next Time</h2>
+<p>The real question is: why didn't OpenStack handle this automatically? It turns out, our <code>client.openstack</code> Ceph user didn't have permission to manage the blocklist. Without <code>allow command "osd blocklist"</code> in its monitor capabilities, Nova couldn't clear stale entries on its own.</p>
+<h3 id="grant-openstack-ceph-blocklist-capabilities">Grant OpenStack Ceph Blocklist Capabilities</h3>
+<p>To allow OpenStack to automatically handle these situations, grant the OpenStack Ceph client the necessary blocklist management permissions.</p>
+<p><strong>Step 1: Check current capabilities:</strong></p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ceph auth get client.openstack
+</code></pre>
+<p><strong>Step 2: Add blocklist capability</strong> (preserving existing OSD caps):</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># First, save existing OSD caps
+ceph auth get client.openstack -o &#x2F;tmp&#x2F;openstack.keyring
+
+# Then update caps (this example assumes existing OSD caps)
+ceph auth caps client.openstack \
+  mon &#x27;allow r, allow command &quot;osd blocklist&quot;&#x27; \
+  osd &#x27;allow class-read object_prefix rbd_children, allow rwx pool=images, allow rwx pool=volumes, allow rwx pool=vms, allow rwx pool=backups&#x27;
+</code></pre>
+<blockquote>
+<p><strong>Note:</strong> Adjust the pool names and OSD caps according to your environment (e.g., <code>vms</code>, <code>volumes</code>, <code>images</code>).</p>
+</blockquote>
+<p><strong>Step 3: Verify the update:</strong></p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ceph auth get client.openstack
+</code></pre>
+<h3 id="nova-configuration-tuning">Nova Configuration Tuning</h3>
+<p>We also tuned <code>nova.conf</code> on the compute nodes:</p>
+<pre data-lang="ini" class="language-ini "><code class="language-ini" data-lang="ini">[libvirt]
+hw_disk_discard = unmap
+disk_cachemodes = network=writeback
+rbd_io_timeout = 30
+</code></pre>
+<p>The <code>rbd_io_timeout</code> is the important one. It gives the RBD client more time to recover during transient issues instead of immediately failing I/O.</p>
+<h2 id="lessons-learned">Lessons Learned</h2>
+<ol>
+<li>
+<p><strong>Ceph's blocklist is doing its job.</strong> It's protecting your data from split-brain scenarios. The problem isn't the mechanism, it's that unclean shutdowns leave orphaned locks behind.</p>
+</li>
+<li>
+<p><strong>New VMs working while old VMs fail is the signature.</strong> If you see this pattern after an outage, check <code>ceph osd blocklist ls</code> immediately. Don't waste time debugging network or OSD issues.</p>
+</li>
+<li>
+<p><strong>Grant OpenStack blocklist permissions proactively.</strong> The <code>allow command "osd blocklist"</code> capability lets Nova handle recovery automatically. Without it, you're doing manual lock surgery at 7am.</p>
+</li>
+<li>
+<p><strong>The <code>rbd lock remove</code> syntax is a trap.</strong> It uses positional arguments with quoted strings. The <code>--locker</code> flag doesn't exist in many versions. Save yourself the frustration and bookmark the correct form: <code>rbd lock remove &lt;pool&gt;/&lt;image&gt; "&lt;lock_id&gt;" "&lt;locker&gt;"</code>.</p>
+</li>
+<li>
+<p><strong>Test your power failure recovery.</strong> We had monitoring, backups, and HA configured. None of that mattered because the failure mode was a logical lock, not a hardware failure. Pull the plug in staging once in a while.</p>
+</li>
+</ol>
+<hr />
+<p><em>This incident occurred in a production Kolla-Ansible OpenStack deployment with Ceph Reef as the storage backend. Total downtime for existing VMs: ~2 hours from power restoration to full recovery. No data was lost.</em></p>
+
+      </article>
+
+      
+      
+      <div class="reaction right" data-endpoint="https:&#x2F;&#x2F;wwwaadityapageni.com.np&#x2F;api&#x2F;reaction"></div>
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2025 Aaditya Pageni
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+
+
+  <script src="https://www.aadityapageni.com.np/js/main.js"></script>
+</body>
+
+</html>
