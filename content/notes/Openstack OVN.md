@@ -29,7 +29,7 @@ mermaid = true
 
 ## 1. OVN Architecture Overview
 
-![OVN Architecture in Kolla Ansible](./images/ovn_architecture.png)
+![OVN Architecture in Kolla Ansible](/img/notes/ovn_architecture.png)
 
 OVN operates in two planes:
 
@@ -305,7 +305,7 @@ ovn_sb_connection = tcp:10.0.0.10:6642
 
 ## 3. Traffic Flow Diagrams
 
-![OVN Traffic Flow — East-West and North-South](../notes/images/ovn_traffic_flow.png)
+![OVN Traffic Flow — East-West and North-South](/img/notes/ovn_traffic_flow.png)
 
 ### 3.1 East-West (VM to VM, different compute nodes)
 

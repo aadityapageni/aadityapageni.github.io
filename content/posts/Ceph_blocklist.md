@@ -27,7 +27,7 @@ Enter 'help' for a list of built-in commands.
 (initramfs)
 ```
 
-![VM console showing I/O errors and initramfs shell](.images/vm-io-error.png)
+![VM console showing I/O errors and initramfs shell](/img/posts/vm-io-error.png)
 
 The VMs couldn't read their own disks. But here's the thing that made it confusing: *new* VMs worked perfectly. We could create a fresh instance, attach a volume, boot it up, no issues. Only the VMs that existed before the outage were affected.
 
@@ -188,4 +188,4 @@ The `rbd_io_timeout` is the important one. It gives the RBD client more time to 
 
 ---
 
-*This incident occurred in a production Kolla-Ansible OpenStack deployment with Ceph Reef as the storage backend. Total downtime for existing VMs: ~2 hours from power restoration to full recovery. No data was lost.*
+
