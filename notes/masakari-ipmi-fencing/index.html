@@ -109,11 +109,6 @@
       <ul>
         
         <li>
-          <a class="h2" href="#table-of-contents">Table of Contents</a>
-          
-        </li>
-        
-        <li>
           <a class="h2" href="#1-introduction">1. Introduction</a>
           
         </li>
@@ -257,42 +252,7 @@
 
         
 
-        <h2 id="table-of-contents">Table of Contents</h2>
-<ol>
-<li>Introduction</li>
-<li>Architectural Flow</li>
-</ol>
-<ul>
-<li>2.1 End-to-End Failure &amp; Recovery Sequence</li>
-<li>2.2 Fencing Sub-Flow Diagram</li>
-</ul>
-<ol start="3">
-<li>Prerequisites</li>
-<li>Configuration Guide</li>
-</ol>
-<ul>
-<li>4.1 Step 1 — Initialize Virtual BMC on the Physical Hypervisor</li>
-<li>4.2 Step 2 — Install &amp; Configure Corosync on Compute Nodes</li>
-<li>4.3 Step 3 — Establish Quorum via QDevice</li>
-<li>4.4 Step 4 — Configure Pacemaker STONITH to Target vBMC Endpoints</li>
-<li>4.5 Step 5 — Configure Kolla-Ansible for Masakari (Instance HA)</li>
-<li>4.6 Step 6 — Align Masakari Checks for vBMC Compatibility</li>
-<li>4.7 Step 7 — Map Masakari Hosts to the OpenStack Dashboard</li>
-</ul>
-<ol start="5">
-<li>Validation &amp; Testing</li>
-</ol>
-<ul>
-<li>5.1 Manual Fencing Validation</li>
-<li>5.2 Full Fencing Test Procedure</li>
-</ul>
-<ol start="6">
-<li>Troubleshooting</li>
-<li>Recovery — Restoring a Fenced Compute Node</li>
-<li>Appendix — Reference Log Samples</li>
-</ol>
-<hr />
-<h2 id="1-introduction">1. Introduction</h2>
+        <h2 id="1-introduction">1. Introduction</h2>
 <p>This document describes the high-availability (HA) architecture that protects OpenStack compute nodes against unplanned host failure. It combines three layers:</p>
 <ul>
 <li><strong>Pacemaker/Corosync</strong> — cluster membership, quorum, and failure detection at the host level.</li>
@@ -774,7 +734,7 @@ pcs status
 <footer>
   <div class="left">
     <div class="copyright">
-      © 2025 Aaditya Pageni
+      © 2026 Aaditya Pageni
       
       <span>|</span>
       Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
