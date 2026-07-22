@@ -9,8 +9,8 @@ footer = false
 
 # If you don't want to display id/bio/avatar, simply comment out that line
 name = "Aaditya Pageni"
-id = "apageni"
-#bio = "k8s, openstack"
+# id = "apageni"
+# bio = "k8s, openstack"
 # avatar = "/img/avatar.gif"
 links = [
     { name = "GitHub", icon = "github", url = "https://github.com/aadityapageni" },
