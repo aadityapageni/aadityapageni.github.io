@@ -1,6 +1,6 @@
 +++
 title = "Get Octavia working in your Openstack"
-date = 2026-01-20
+date = 2026-07-22
 [taxonomies]
 tags = ["openstack","octavia"]
 
