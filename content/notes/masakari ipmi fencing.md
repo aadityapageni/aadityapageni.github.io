@@ -10,25 +10,25 @@ mermaid = true
 
 ## Table of Contents
 
-1. [Introduction](#1-introduction)
-2. [Architectural Flow](#2-architectural-flow)
-   - 2.1 [End-to-End Failure & Recovery Sequence](#21-end-to-end-failure--recovery-sequence)
-   - 2.2 [Fencing Sub-Flow Diagram](#22-fencing-sub-flow-diagram)
-3. [Prerequisites](#3-prerequisites)
-4. [Configuration Guide](#4-configuration-guide)
-   - 4.1 [Step 1 — Initialize Virtual BMC on the Physical Hypervisor](#41-step-1--initialize-virtual-bmc-on-the-physical-hypervisor)
-   - 4.2 [Step 2 — Install & Configure Corosync on Compute Nodes](#42-step-2--install--configure-corosync-on-compute-nodes)
-   - 4.3 [Step 3 — Establish Quorum via QDevice](#43-step-3--establish-quorum-via-qdevice)
-   - 4.4 [Step 4 — Configure Pacemaker STONITH to Target vBMC Endpoints](#44-step-4--configure-pacemaker-stonith-to-target-vbmc-endpoints)
-   - 4.5 [Step 5 — Configure Kolla-Ansible for Masakari (Instance HA)](#45-step-5--configure-kolla-ansible-for-masakari-instance-ha)
-   - 4.6 [Step 6 — Align Masakari Checks for vBMC Compatibility](#46-step-6--align-masakari-checks-for-vbmc-compatibility)
-   - 4.7 [Step 7 — Map Masakari Hosts to the OpenStack Dashboard](#47-step-7--map-masakari-hosts-to-the-openstack-dashboard)
-5. [Validation & Testing](#5-validation--testing)
-   - 5.1 [Manual Fencing Validation](#51-manual-fencing-validation)
-   - 5.2 [Full Fencing Test Procedure](#52-full-fencing-test-procedure)
-6. [Troubleshooting](#6-troubleshooting)
-7. [Recovery — Restoring a Fenced Compute Node](#7-recovery--restoring-a-fenced-compute-node)
-8. [Appendix — Reference Log Samples](#8-appendix--reference-log-samples)
+1. Introduction
+2. Architectural Flow
+  - 2.1 End-to-End Failure & Recovery Sequence
+  - 2.2 Fencing Sub-Flow Diagram
+3. Prerequisites
+4. Configuration Guide
+  - 4.1 Step 1 — Initialize Virtual BMC on the Physical Hypervisor
+  - 4.2 Step 2 — Install & Configure Corosync on Compute Nodes
+  - 4.3 Step 3 — Establish Quorum via QDevice
+  - 4.4 Step 4 — Configure Pacemaker STONITH to Target vBMC Endpoints
+  - 4.5 Step 5 — Configure Kolla-Ansible for Masakari (Instance HA)
+  - 4.6 Step 6 — Align Masakari Checks for vBMC Compatibility
+  - 4.7 Step 7 — Map Masakari Hosts to the OpenStack Dashboard
+5. Validation & Testing
+  - 5.1 Manual Fencing Validation
+  - 5.2 Full Fencing Test Procedure
+6. Troubleshooting
+7. Recovery — Restoring a Fenced Compute Node
+8. Appendix — Reference Log Samples
 
 ---
 
