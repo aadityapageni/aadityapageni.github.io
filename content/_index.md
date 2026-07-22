@@ -14,7 +14,6 @@ name = "Aaditya Pageni"
 # avatar = "/img/avatar.gif"
 links = [
     { name = "GitHub", icon = "github", url = "https://github.com/aadityapageni" },
-    { name = "Twitter", icon = "twitter", url = "https://twitter.com/aadityapageni" },
     { name = "Email", icon = "email", url = "mailto:aadityapageni1@gmail.com" },
 ]
 
@@ -25,4 +24,3 @@ recent_more_text = "more"
 date_format = "%-d %b %Y"
 +++
 
-wanna talk about openstack, k8s, cricket, or anything else? hit me up!
