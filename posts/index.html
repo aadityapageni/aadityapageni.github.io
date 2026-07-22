@@ -86,11 +86,11 @@
   
   <script>
     const theme = sessionStorage.getItem('theme');
-    const match = window.matchMedia("(prefers-color-scheme: dark)").matches
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
     if ((theme && theme == 'dark') || (!theme && match)) {
       document.body.classList.add('dark');
       const hl = document.querySelector('link#hl');
-      if (hl) hl.href = 'https://www.aadityapageni.com.np/hl-dark.css';
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/giallo-dark.css';
     }
   </script>
   
@@ -112,6 +112,11 @@
       <a class="post instant " href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;posts&#x2F;ceph-blocklist&#x2F;">
         <span>Openstack Instance I&#x2F;O Bufffer Error :  A Ceph Blocklist Story</span>
         <span class="date">May 8, 2026</span>
+      </a>
+      
+      <a class="post instant " href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;posts&#x2F;octavia-kolla-ansible&#x2F;">
+        <span>Get Octavia working in your Openstack</span>
+        <span class="date">Jan 20, 2026</span>
       </a>
       
       <a class="post instant " href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;posts&#x2F;openstack-installation&#x2F;">

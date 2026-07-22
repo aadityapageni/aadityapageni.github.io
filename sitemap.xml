@@ -28,6 +28,10 @@
         <lastmod>2026-05-08</lastmod>
     </url>
     <url>
+        <loc>https://www.aadityapageni.com.np/posts/octavia-kolla-ansible/</loc>
+        <lastmod>2026-01-20</lastmod>
+    </url>
+    <url>
         <loc>https://www.aadityapageni.com.np/posts/openstack-installation/</loc>
         <lastmod>2026-01-20</lastmod>
     </url>
@@ -36,6 +40,9 @@
     </url>
     <url>
         <loc>https://www.aadityapageni.com.np/tags/ceph/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/octavia/</loc>
     </url>
     <url>
         <loc>https://www.aadityapageni.com.np/tags/openstack/</loc>

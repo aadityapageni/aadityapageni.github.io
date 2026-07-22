@@ -85,11 +85,11 @@ en">
   
   <script>
     const theme = sessionStorage.getItem('theme');
-    const match = window.matchMedia("(prefers-color-scheme: dark)").matches
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
     if ((theme && theme == 'dark') || (!theme && match)) {
       document.body.classList.add('dark');
       const hl = document.querySelector('link#hl');
-      if (hl) hl.href = 'https://www.aadityapageni.com.np/hl-dark.css';
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/giallo-dark.css';
     }
   </script>
   
@@ -106,6 +106,7 @@ en">
     <h1 class="title">Tags</h1>
     <div class="tags">
       <a class="instant" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;tags&#x2F;ceph&#x2F;"># ceph</a>
+      <a class="instant" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;tags&#x2F;octavia&#x2F;"># octavia</a>
       <a class="instant" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;tags&#x2F;openstack&#x2F;"># openstack</a>
       
     </div>

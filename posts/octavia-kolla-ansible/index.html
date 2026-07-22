@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="~">
+
+  <title>Get Octavia working in your Openstack</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.aadityapageni.com.np/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.aadityapageni.com.np/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.aadityapageni.com.np/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://www.aadityapageni.com.np/main.css">
+  
+
+<link id="hl" rel="stylesheet" type="text/css" href="/hl-light.css" />
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/giallo-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#what-octavia-actually-does">What Octavia actually does?</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#getting-the-config-in-place">Getting the config in place</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#pre-deployment-certs-and-the-amphora-image">Pre-deployment: certs and the Amphora image</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-o-hm0-setup-which-is-the-part-nobody-warns-you-about">The o-hm0 setup, which is the part nobody warns you about</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#actually-deploying-the-thing">Actually deploying the thing</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#post-deploy-checks-i-actually-ran">Post-deploy checks I actually ran</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#creating-an-actual-load-balancer-and-then-waiting">Creating an actual load balancer, and then waiting</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#where-it-actually-broke">Where it actually broke</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-wrong-turn">The wrong turn</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-real-fix">The real fix</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#other-things-that-go-wrong-that-i-ran-into-or-read-about-while-debugging">Other things that go wrong, that I ran into or read about while debugging</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#multinode-which-is-its-own-separate-headache">Multinode, which is its own separate headache</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#what-actually-surprised-me-thinking-back-on-it">What actually surprised me, thinking back on it</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#numbers-for-what-they-re-worth">Numbers, for what they&#x27;re worth</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#what-i-d-do-differently">What I&#x27;d do differently</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#closing">Closing</a>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>Get Octavia working in your Openstack</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Jan 20, 2026</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://www.aadityapageni.com.np/tags/openstack"><span>#</span>openstack</a><a class="instant" href="https://www.aadityapageni.com.np/tags/octavia"><span>#</span>octavia</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <p>I've been running my own OpenStack cluster on Kolla-Ansible for a while now, mostly because I like understanding the plumbing of things I depend on. Compute, block storage, networking, all of that I'd already fought with and made peace with. Load balancing was the one piece I kept avoiding. Everyone told me Octavia was "basically free" once Neutron was working. That turned out to be true in the same way that assembling furniture is "basically free" once you have all the parts. Sure. Except you don't know if you have all the parts until you're three hours in and missing a bolt.</p>
+<p>This is the story of getting Octavia running with the Amphora provider on Kolla-Ansible, OpenStack 2025.1, OVN networking. It took me a weekend. It should have taken an afternoon. The gap between those two numbers is basically the whole post.</p>
+<h2 id="what-octavia-actually-does">What Octavia actually does?</h2>
+<p>Octavia doesn't load balance anything itself. What it does is spin up tiny VMs called Amphorae, each one just running HAProxy, and then it manages those VMs over a private network you probably didn't know you needed until right now.</p>
+<p>Every Amphora has two legs:</p>
+<ul>
+<li>a management port, on <code>lb-mgmt-net</code>, used for health checks, pushing HAProxy config, and cert rotation</li>
+<li>a VIP port, on your actual tenant network, which is where client traffic comes in and backend traffic goes out</li>
+</ul>
+<p>In my setup that looked like this:</p>
+<table><thead><tr><th>Network</th><th>Subnet</th><th>Type</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>lb-mgmt-net</code></td><td>10.1.0.0/24</td><td>VLAN 100 (physnet1)</td><td>Octavia control plane only</td></tr>
+<tr><td><code>LAN1</code></td><td>10.0.0.0/24</td><td>tenant overlay</td><td>Backend VMs + LB VIP</td></tr>
+<tr><td><code>public1</code></td><td>10.20.30.0/24</td><td>provider flat</td><td>External/floating IPs</td></tr>
+</tbody></table>
+<p>And the IP allocation ended up looking like this, once everything was working:</p>
+<table><thead><tr><th>Component</th><th>IP</th><th>Why</th></tr></thead><tbody>
+<tr><td><code>o-hm0</code> (controller)</td><td>10.1.0.51</td><td>Health-manager endpoint, manually assigned, outside the DHCP pool</td></tr>
+<tr><td>Amphora mgmt port</td><td>10.1.0.100–200 (DHCP)</td><td>Auto-assigned from the <code>lb-mgmt-subnet</code> pool</td></tr>
+<tr><td>Amphora vip port</td><td>e.g. 10.0.0.64</td><td>Auto-assigned from <code>LAN1</code>, HAProxy uses this to reach backends</td></tr>
+<tr><td>Load Balancer VIP</td><td>e.g. 10.0.0.77</td><td>Auto-assigned from <code>LAN1</code> when the LB is created</td></tr>
+</tbody></table>
+<p>The part that isn't obvious from any of that is the interface named <code>o-hm0</code>. It's a single OVS internal port on the controller that gives Octavia's health-manager container a physical presence on <code>lb-mgmt-net</code>. Without it, the health-manager can bind its socket, listen on its port, log "healthy," and still be completely unreachable from the network it thinks it's on. Nobody tells you this up front. You find out.</p>
+<p>Here's the path traffic takes once it's actually wired up correctly:</p>
+<pre><code>octavia_health_manager container
+        │
+        │ binds to 10.1.0.51:5555
+        ▼
+    o-hm0  (OVS internal port on br-ex, tag=100)
+        │
+        │ VLAN 100 tagged frames exit via ens19
+        ▼
+    br-ex → ens19 → physical switch
+        │
+        ▼
+    Amphora VM mgmt port (10.1.0.x on lb-mgmt-net VLAN 100)
+        │ port 9443 — HAProxy agent API
+        │ port 5555 UDP — heartbeat back to 10.1.0.51
+</code></pre>
+<p>I stared at this diagram (well, my own scribbled version of it) for a solid twenty minutes at one point trying to figure out which hop was broken. Turns out the answer was "the second one," but I'm getting ahead of myself.</p>
+<h2 id="getting-the-config-in-place">Getting the config in place</h2>
+<p>The globals.yml changes are the easy part. This is what I ended up with:</p>
+<pre data-lang="yaml" class="language-yaml "><code class="language-yaml" data-lang="yaml">####################
+# Neutron (required for VLAN lb-mgmt-net)
+####################
+neutron_physical_networks: &quot;physnet1&quot;
+neutron_ovn_bridge_mappings: &quot;physnet1:br-ex&quot;
+neutron_ovn_vlan_ranges: &quot;physnet1:1:4094&quot;
+
+####################
+# Octavia
+####################
+enable_octavia: &quot;yes&quot;
+
+# Provider driver — must be NAME:Description format
+octavia_provider_drivers: &quot;amphora:Amphora provider&quot;
+
+# Host interface the health-manager binds to
+octavia_network_interface: &quot;o-hm0&quot;
+
+# Ensure o-hm0 is tagged with the lb-mgmt VLAN on OVS
+octavia_hm_ovs_vlan: 100
+
+# Let kolla create lb-mgmt-net, flavor, and security groups automatically
+octavia_auto_configure: &quot;yes&quot;
+
+# Must match the --tag used when uploading the Amphora image to Glance
+octavia_amp_image_tag: &quot;amphora&quot;
+
+# Amphora VM flavor — increase RAM to 1024 to avoid boot failures
+octavia_amp_flavor:
+  name: &quot;amphora&quot;
+  is_public: no
+  vcpus: 1
+  ram: 1024
+  disk: 5
+
+# lb-mgmt-net definition — kolla creates this automatically when octavia_auto_configure: yes
+# NOTE: use provider_segmentation_id, not provider_segment
+octavia_amp_network:
+  name: &quot;lb-mgmt-net&quot;
+  provider_network_type: &quot;vlan&quot;
+  provider_physical_network: &quot;physnet1&quot;
+  provider_segmentation_id: 100
+  external: false
+  shared: false
+  subnet:
+    name: &quot;lb-mgmt-subnet&quot;
+    cidr: &quot;10.1.0.0&#x2F;24&quot;
+    allocation_pool_start: &quot;10.1.0.100&quot;
+    allocation_pool_end: &quot;10.1.0.200&quot;
+    enable_dhcp: yes
+
+####################
+# Horizon
+####################
+horizon_enable_octavia_ui: &quot;yes&quot;
+</code></pre>
+<p>Small note that cost me a search through the source once: it's <code>provider_segmentation_id</code>, not <code>provider_segment</code>. Easy to typo, and if you get it wrong the network just won't get the VLAN tag you expect, with no error telling you why.</p>
+<p>If you're doing this on more than one controller, every node needs the identical globals.yml, and every node needs its own <code>o-hm0</code> setup done individually, with its own static IP outside the DHCP range (10.1.0.51 on the first controller, 10.1.0.52 on the second, and so on). More on that later, because multinode is where this whole thing gets genuinely annoying.</p>
+<h2 id="pre-deployment-certs-and-the-amphora-image">Pre-deployment: certs and the Amphora image</h2>
+<p>Octavia does mutual TLS between the health-manager and every Amphora VM, which is a nice touch and also one more thing that can be subtly wrong. Generating the certs is one command:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">kolla-ansible octavia-certificates
+# Certificates are written to &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;octavia&#x2F;
+ls &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;octavia&#x2F;
+# Expected: client_ca.cert.pem  client.cert-and-key.pem
+#           server_ca.cert.pem  server_ca.key.pem
+</code></pre>
+<p>Then you need an actual Amphora image, because Octavia doesn't ship one. You build it yourself with diskimage-builder:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">pip install diskimage-builder --break-system-packages
+
+git clone https:&#x2F;&#x2F;github.com&#x2F;openstack&#x2F;octavia.git
+cd octavia&#x2F;diskimage-create&#x2F;
+bash diskimage-create.sh
+</code></pre>
+<p>This takes somewhere between five and ten minutes depending on your machine, and produces a qcow2 image you then upload to Glance:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh
+openstack image create amphora-x64-haproxy \
+  --public \
+  --container-format bare \
+  --disk-format qcow2 \
+  --file &#x2F;path&#x2F;to&#x2F;amphora-x64-haproxy.qcow2 \
+  --tag amphora
+</code></pre>
+<p>The <code>--public</code> flag matters more than it looks like it should. Without it, Octavia's service account can end up unable to find the image at all, because it's not looking in your project, it's looking as a service user. I didn't hit this myself, but it's exactly the kind of thing that would have cost me another hour if I had, so I made the image public from the start and moved on.</p>
+<p>If your Neutron ML2 setup doesn't already have VLAN ranges configured (mine mostly did, but I checked anyway):</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">mkdir -p &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;neutron&#x2F;
+cat &gt; &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;neutron&#x2F;ml2_conf.ini &lt;&lt; &#x27;EOF&#x27;
+[ml2_type_vlan]
+network_vlan_ranges = physnet1:1:4094
+EOF
+</code></pre>
+<p>And I added this to the Octavia config directly, mostly out of an abundance of caution, before the actual bug revealed itself:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">cat &gt;&gt; &#x2F;etc&#x2F;kolla&#x2F;config&#x2F;octavia&#x2F;octavia.conf &lt;&lt; &#x27;EOF&#x27;
+
+[health_manager]
+bind_ip = 10.1.0.51
+controller_ip_port_list = 10.1.0.51:5555
+EOF
+</code></pre>
+<h2 id="the-o-hm0-setup-which-is-the-part-nobody-warns-you-about">The o-hm0 setup, which is the part nobody warns you about</h2>
+<p>This is the section of the whole process that actually matters, and it's also the part that's easiest to skip because nothing in the deploy step will complain if you skip it. Kolla's <code>octavia_auto_configure: yes</code> creates the Neutron network, the subnet, the security groups, the flavor. It does not create the host-level OVS port that lets your health-manager container actually reach any of that. You have to do that by hand.</p>
+<p>First, anchor the health-manager's MAC address in Neutron, so OVN programs the right flows for it:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh
+
+openstack port create \
+  --network lb-mgmt-net \
+  --device-owner Octavia:health-mgr \
+  --fixed-ip ip-address=10.1.0.51 \
+  --no-security-group \
+  octavia-health-manager-port-$(hostname)
+
+HM_MAC=$(openstack port show octavia-health-manager-port-$(hostname) \
+  -f value -c mac_address)
+echo &quot;MAC: $HM_MAC&quot;
+</code></pre>
+<p>Then create the actual OVS port and give it that MAC:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ovs-vsctl --if-exists del-port o-hm0
+
+ovs-vsctl add-port br-ex o-hm0 tag=100 -- set Interface o-hm0 type=internal
+
+ip link set o-hm0 down
+ip link set o-hm0 address &quot;$HM_MAC&quot;
+ip link set o-hm0 up
+
+ip addr add 10.1.0.51&#x2F;24 dev o-hm0 2&gt;&#x2F;dev&#x2F;null || true
+
+ovs-vsctl port-to-br o-hm0          # Must print: br-ex
+ovs-vsctl list port o-hm0 | grep tag # Must show:  tag: 100
+</code></pre>
+<p>The key rule, which I'm putting in its own paragraph because I violated it and paid for it: <code>o-hm0</code> has to live on <code>br-ex</code>, tagged with VLAN 100, and OVS handles that tagging internally. Do not, under any circumstances, also create a host-level VLAN subinterface for the same tag, like <code>ens18.100</code> via netplan. I'll get to why in a minute. It is not a hypothetical warning.</p>
+<p>Since none of this survives a reboot on its own, I wrapped it in a systemd unit:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">cat &gt; &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;o-hm0.service &lt;&lt; EOF
+[Unit]
+Description=Octavia health-manager OVS port (o-hm0)
+After=network.target openvswitch-switch.service
+Requires=openvswitch-switch.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=&#x2F;bin&#x2F;bash -c &#x27; \\
+  ovs-vsctl --if-exists del-port o-hm0; \\
+  ovs-vsctl --may-exist add-port br-ex o-hm0 tag=100 -- set Interface o-hm0 type=internal; \\
+  ip link set o-hm0 address ${HM_MAC}; \\
+  ip addr replace 10.1.0.51&#x2F;24 dev o-hm0; \\
+  ip link set o-hm0 up&#x27;
+ExecStop=&#x2F;bin&#x2F;bash -c &#x27;ovs-vsctl --if-exists del-port br-ex o-hm0&#x27;
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now o-hm0.service
+systemctl status o-hm0.service
+</code></pre>
+<p>One thing that'll bite you if you're copy-pasting this from notes like I was: replace <code>${HM_MAC}</code> in the file with the literal MAC address you got back earlier. Systemd unit files don't interpolate shell variables from your current session, obviously, but it's the kind of mistake you make at 11pm when you've written the same MAC address six times already and your fingers are on autopilot.</p>
+<h2 id="actually-deploying-the-thing">Actually deploying the thing</h2>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># If deploying Octavia for the first time on an existing cluster:
+kolla-ansible reconfigure -t octavia,horizon
+
+# If this is a fresh first deploy:
+kolla-ansible deploy -i all-in-one --tags octavia
+kolla-ansible post-deploy -i all-in-one
+
+docker ps --format &quot;table {{.Names}}\t{{.Status}}&quot; | grep octavia
+</code></pre>
+<p>And you're looking for five containers, all healthy:</p>
+<pre><code>octavia_api              Up X minutes (healthy)
+octavia_worker           Up X minutes (healthy)
+octavia_health_manager   Up X minutes (healthy)
+octavia_housekeeping     Up X minutes (healthy)
+octavia_driver_agent     Up X minutes (healthy)
+</code></pre>
+<p>Mine came up exactly like that. All green. Which felt like the finish line. It was not the finish line.</p>
+<h2 id="post-deploy-checks-i-actually-ran">Post-deploy checks I actually ran</h2>
+<p>Before touching anything load-balancer shaped, I went through the basic validation:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">docker exec octavia_health_manager grep bind_ip &#x2F;etc&#x2F;octavia&#x2F;octavia.conf
+# Expected: bind_ip = 10.1.0.51
+
+docker exec octavia_health_manager ss -ulnp | grep 5555
+# Expected: udp UNCONN 0 0 10.1.0.51:5555
+
+ovs-vsctl port-to-br o-hm0       # br-ex
+ovs-vsctl list port o-hm0 | grep tag  # tag: 100
+</code></pre>
+<p>Then the provider and resource checks:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh
+
+openstack loadbalancer provider list
+# Expected: amphora | Amphora provider
+
+openstack network show lb-mgmt-net | grep -E &quot;provider:|id&quot;
+# Expected: provider:network_type = vlan, provider:segmentation_id = 100
+
+openstack security group list | grep octavia
+openstack flavor list --all | grep amphora
+</code></pre>
+<p>And a look at the worker logs, which should end on something reassuring:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">docker logs octavia_worker 2&gt;&amp;1 | tail -20
+# Should end with: &quot;Starting V2 consumer...&quot;
+# Must NOT contain: ConfigFileValueError or CRITICAL
+</code></pre>
+<p>Every single one of these came back clean. Provider registered, network tagged correctly, flavor present, worker logs boring in the good way. I remember genuinely thinking, at this point, that I was basically done.</p>
+<h2 id="creating-an-actual-load-balancer-and-then-waiting">Creating an actual load balancer, and then waiting</h2>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh
+
+SUBNET_ID=$(openstack subnet show &lt;your-tenant-subnet-name&gt; -f value -c id)
+
+openstack loadbalancer create \
+  --name web-lb \
+  --vip-subnet-id $SUBNET_ID \
+  --wait
+
+openstack loadbalancer listener create \
+  --name web-listener \
+  --protocol HTTP \
+  --protocol-port 80 \
+  --wait \
+  web-lb
+
+openstack loadbalancer pool create \
+  --name web-pool \
+  --lb-algorithm ROUND_ROBIN \
+  --listener web-listener \
+  --protocol HTTP \
+  --wait
+
+openstack loadbalancer member create \
+  --name lb-1-1 \
+  --subnet-id $SUBNET_ID \
+  --address 10.0.0.44 \
+  --protocol-port 80 \
+  web-pool
+
+openstack loadbalancer member create \
+  --name lb-1-2 \
+  --subnet-id $SUBNET_ID \
+  --address 10.0.0.59 \
+  --protocol-port 80 \
+  web-pool
+
+openstack loadbalancer healthmonitor create \
+  --name web-health \
+  --delay 5 \
+  --max-retries 4 \
+  --timeout 10 \
+  --type HTTP \
+  --url-path &#x2F; \
+  web-pool
+
+watch openstack loadbalancer show web-lb
+</code></pre>
+<p>At this point it's worth knowing what you're actually watching for, because the statuses are not self-explanatory the first time you see them:</p>
+<table><thead><tr><th>Status Field</th><th>Value</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>Provisioning Status</td><td><code>ACTIVE</code></td><td>Infrastructure built successfully, Amphora booted, ports wired</td></tr>
+<tr><td>Provisioning Status</td><td><code>PENDING_CREATE</code></td><td>Amphora VM is still booting, wait 2–3 min</td></tr>
+<tr><td>Operating Status</td><td><code>ONLINE</code></td><td>Health monitor is passing, LB is routing traffic</td></tr>
+<tr><td>Operating Status</td><td><code>OFFLINE</code></td><td>No health monitor attached, or health checks failing</td></tr>
+<tr><td>Operating Status</td><td><code>ERROR</code></td><td>Backend unreachable, check security groups</td></tr>
+<tr><td>Member Status</td><td><code>NO_MONITOR</code></td><td>Health monitor not yet created</td></tr>
+</tbody></table>
+<p><code>PENDING_CREATE</code> is supposed to last two or three minutes. That's the Amphora booting, nothing more. Mine sat there for twenty. Then thirty. I made a coffee. It was still <code>PENDING_CREATE</code> when I got back.</p>
+<h2 id="where-it-actually-broke">Where it actually broke</h2>
+<p>Nothing crashed. That's what made this annoying. Every container was healthy. Nova said the Amphora VM was running fine. If I hadn't been specifically watching the load balancer status, I would have had no reason to believe anything was wrong at all.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">docker logs octavia_worker 2&gt;&amp;1 | grep -E &quot;ERROR|WARNING&quot; | tail -30
+</code></pre>
+<p>Nothing useful. A few warnings, none of them related.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">openstack server list --all-projects | grep amphora
+</code></pre>
+<p>The VM existed. Booted. Had an IP from the DHCP pool on <code>lb-mgmt-net</code>. From Nova's side of the world, this was a completely unremarkable, successful VM boot.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">openstack port list --network lb-mgmt-net
+</code></pre>
+<p>Also fine. The port existed, had an address in the expected range.</p>
+<p>Then the one that actually told me something:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">docker logs octavia_health_manager 2&gt;&amp;1 | grep -i heartbeat
+</code></pre>
+<p>Nothing. Not "heartbeat failed," not "heartbeat timeout." Just no lines at all, ever, matching that word. The Amphora was out there, alive, presumably trying to phone home, and the health-manager had simply never heard from it. Not even once.</p>
+<p>The common causes for exactly this symptom, according to the troubleshooting notes I'd already collected: Amphora image missing or tagged wrong, wrong <code>amp_boot_network_list</code>, or <code>o-hm0</code>'s VLAN tag missing. I'd built the image correctly and tagged it. So I went and checked the VLAN tag.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ovs-vsctl list port o-hm0 | grep tag
+</code></pre>
+<p>Empty. No tag at all.</p>
+<h2 id="the-wrong-turn">The wrong turn</h2>
+<p>My first working theory, once I saw the missing tag, was reasonable enough: the OVS port itself must be misconfigured somehow, maybe the internal type wasn't sticking, maybe I needed a more explicit interface on the host side to actually carry VLAN 100. So I did something I now recognize as a mistake almost the instant I typed it: I added a Netplan VLAN subinterface on top of the physical NIC, <code>ens18.100</code>, thinking OVS and a kernel-level VLAN interface could just coexist.</p>
+<p>They cannot. Within about five minutes <code>br-ex</code> stopped responding to anything at all, because now there were two separate things trying to own VLAN 100 tagging on the same physical link, one via OVS's internal tagging table and one via a kernel VLAN device sitting on top of the same NIC. I reverted the netplan change as fast as I could type the commands, and connectivity came back once I did.</p>
+<p>That detour cost me more time than the actual bug did. Worth saying plainly: when something is OVS-managed, the fix is basically never "also manage it at the kernel level in parallel." Pick one owner for VLAN tagging. OVS was already supposed to be that owner. I just hadn't actually told it to be.</p>
+<h2 id="the-real-fix">The real fix</h2>
+<p>Once I stopped trying to be clever, the fix was almost embarrassingly small. Set the tag directly on the OVS port object, nothing else:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ovs-vsctl set port o-hm0 tag=100
+ip link set o-hm0 up
+</code></pre>
+<p>And then test actual reachability, not just config state:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">AMPHORA_IP=$(openstack port list --network lb-mgmt-net -f value -c fixed_ips \
+  | grep -oP &#x27;10\.1\.0\.\d+&#x27; | head -1)
+ping -c3 -I o-hm0 $AMPHORA_IP
+</code></pre>
+<p>The ping came back. First time all day something on this network path actually answered. I checked the heartbeat log again more out of habit than expectation, and this time there were lines. The load balancer moved to <code>ACTIVE</code> within about thirty seconds of that.</p>
+<h2 id="other-things-that-go-wrong-that-i-ran-into-or-read-about-while-debugging">Other things that go wrong, that I ran into or read about while debugging</h2>
+<p>A few other failure modes showed up along the way, or were close enough calls that I want to mention them.</p>
+<p>Members going <code>OFFLINE</code> or <code>ERROR</code> right after you attach a health monitor is usually not the health monitor's fault. The Amphora probes your backends from its VIP port on the tenant network, and if your backend VMs' security groups don't allow inbound traffic from that Amphora, the health checks just fail silently and the member sits there looking broken when the backend itself is fine.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">openstack server show lb-1-1 -c security_groups
+
+openstack security group rule create \
+  --protocol tcp \
+  --dst-port 80 \
+  --remote-ip 10.0.0.0&#x2F;24 \
+  &lt;security-group-id&gt;
+</code></pre>
+<p>I also hit the classic typo in <code>octavia_provider_drivers</code>. If the worker logs show:</p>
+<pre><code>ConfigFileValueError: Value should be NAME:VALUE pairs separated by &quot;,&quot;
+</code></pre>
+<p>it's because the value needs to be <code>NAME:Description</code>, not just the bare name:</p>
+<pre data-lang="yaml" class="language-yaml "><code class="language-yaml" data-lang="yaml"># WRONG:
+octavia_provider_drivers: &quot;amphora&quot;
+
+# CORRECT:
+octavia_provider_drivers: &quot;amphora:Amphora provider&quot;
+</code></pre>
+<p>Then <code>kolla-ansible reconfigure -t octavia</code> and it clears up.</p>
+<p>And if you ever need to change <code>lb-mgmt-net</code>'s provider network type after the fact, you'll hit this:</p>
+<pre><code>The following parameters cannot be updated: provider_network_type
+</code></pre>
+<p>Neutron just won't let you update that field in place. The only real fix is to delete the network entirely and let Kolla recreate it:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh
+NET_ID=$(openstack network show lb-mgmt-net -f value -c id)
+openstack port list --network $NET_ID -f value -c id | xargs -r openstack port delete
+openstack subnet delete lb-mgmt-subnet
+openstack network delete lb-mgmt-net
+kolla-ansible reconfigure -t octavia
+</code></pre>
+<h2 id="multinode-which-is-its-own-separate-headache">Multinode, which is its own separate headache</h2>
+<p>Everything above was single-controller. On a multinode cluster, the health-manager runs on every controller, and all of them form an active-active cluster where any of them can receive a heartbeat from any Amphora. Which sounds nice until you realize it means you have to repeat the entire <code>o-hm0</code> dance on every single node, individually, with a unique IP each time.</p>
+<table><thead><tr><th>Node</th><th>o-hm0 IP</th><th>Neutron Port Name</th></tr></thead><tbody>
+<tr><td>controller-1</td><td>10.1.0.51</td><td>octavia-health-manager-port-controller-1</td></tr>
+<tr><td>controller-2</td><td>10.1.0.52</td><td>octavia-health-manager-port-controller-2</td></tr>
+<tr><td>controller-3</td><td>10.1.0.53</td><td>octavia-health-manager-port-controller-3</td></tr>
+</tbody></table>
+<p>All of those IPs need to sit outside the DHCP allocation range (100 through 200), or you'll get conflicts with whatever the Amphorae are handed automatically.</p>
+<p>You also need to tell Octavia about every controller's health-manager endpoint, via an override:</p>
+<pre data-lang="ini" class="language-ini "><code class="language-ini" data-lang="ini">[health_manager]
+controller_ip_port_list = 10.1.0.51:5555,10.1.0.52:5555,10.1.0.53:5555
+</code></pre>
+<p>saved to <code>/etc/kolla/config/octavia.conf</code>, followed by <code>kolla-ansible reconfigure -t octavia</code>.</p>
+<p>Kolla already sets <code>bind_ip</code> per host using <code>{{ api_interface_address }}</code>, which resolves correctly to each node's own management IP without you needing to touch it. What you do need to get right is <code>controller_ip_port_list</code> listing all the nodes, because that's how each Amphora knows every place it's allowed to send its heartbeat.</p>
+<p>The Amphora image itself needs to stay <code>--public</code> (or at least shared to the <code>service</code> project), since any controller's worker might be the one spawning a given Amphora, and it needs to be able to find the image regardless of which node that ends up being.</p>
+<p>And finally, every controller's <code>o-hm0</code> needs to actually be verified individually, not just assumed to be fine because node one worked:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Run on each controller:
+ovs-vsctl port-to-br o-hm0        # must be br-ex
+ovs-vsctl list port o-hm0 | grep tag  # must be tag: 100
+ping -c3 -I o-hm0 10.1.0.1        # basic L2 reachability test
+</code></pre>
+<p>If even one node can't reach <code>lb-mgmt-net</code>, any Amphora that happens to get assigned to that node will never send it a heartbeat, and you'll see false <code>OFFLINE</code> statuses that have nothing to do with the actual backend health. I didn't run a three-node cluster myself for this particular exercise, but I made sure to write all of this down precisely because I know I'll be doing it eventually, and I will not remember any of it by then.</p>
+<h2 id="what-actually-surprised-me-thinking-back-on-it">What actually surprised me, thinking back on it</h2>
+<p>The VLAN tag itself isn't the interesting part. I'll forget the exact detail within a year, honestly, and have to relearn it from these exact notes. What stuck with me is how quiet the whole failure was, at every single layer.</p>
+<p>Nova didn't complain, the VM booted fine. Neutron didn't complain, the ports and networks all looked correct in every single <code>show</code> and <code>list</code> command I ran. Octavia's own containers reported healthy the entire time. The only actual signal that anything was wrong was the absence of one specific log line, a line that has no corresponding warning explaining why it's missing. There's no "heartbeat expected, not received" message. There's just silence, which I suppose is technically accurate, since silence is literally what was happening on the wire.</p>
+<p>That's a deliberate design choice and not really a bug, since health-manager is built to tolerate Amphorae that take a while to boot, so it doesn't scream the second a heartbeat is a little late. But it does mean you get almost no signal to work backward from. You more or less have to already carry the entire traffic path around in your head, health-manager to o-hm0 to br-ex to the VLAN tag to the physical switch to the Amphora's mgmt port, and check every hop manually, because nothing is going to point you at the broken one.</p>
+<h2 id="numbers-for-what-they-re-worth">Numbers, for what they're worth</h2>
+<p>This wasn't really a performance exercise, the bottleneck the whole time was configuration, not throughput, but a few things worth noting anyway:</p>
+<p>Amphora boot to <code>ACTIVE</code> took roughly 2 to 3 minutes once the network path actually existed, and that's basically all VM boot time, nothing Octavia-specific about it.</p>
+<p>The health monitor settings I landed on: 5 second delay, 4 max retries, 10 second timeout. Aggressive enough to catch a dead backend inside about 20 seconds without flapping on some momentary blip.</p>
+<p>Once the path existed, heartbeats came in every few seconds, steady. The failure mode was never "slow." It was "never," which in hindsight is exactly why staring at timing graphs wouldn't have helped me at all.</p>
+<p>A single Amphora on a 1 vCPU, 1024 MB flavor is fine for the kind of traffic I actually care about. I wouldn't trust it for anything serious without bumping that flavor up first, but that's a separate problem from the one this post is about.</p>
+<h2 id="what-i-d-do-differently">What I'd do differently</h2>
+<p>I'd write the <code>o-hm0</code> checks as a small script and run them before deploying Octavia at all, not after something's already stuck in <code>PENDING_CREATE</code> for half an hour:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ovs-vsctl port-to-br o-hm0          # expect: br-ex
+ovs-vsctl list port o-hm0 | grep tag # expect: tag: 100
+ip addr show o-hm0                  # expect: 10.1.0.51&#x2F;24, UP
+</code></pre>
+<p>I would not touch Netplan. At all. That detour cost more time than the real bug, and the lesson generalizes further than just this one interface: if OVS owns something, don't also try to manage it from the kernel side in parallel, even "just to check."</p>
+<p>And on multinode, I'd set up every controller's <code>o-hm0</code> and its <code>controller_ip_port_list</code> entry in the same sitting, rather than getting node one working and assuming the rest would just follow along. They don't. Each one needs its own Neutron port, its own IP outside the DHCP pool, and its own OVS setup, or you'll end up with Amphorae quietly heartbeating into nothing on whichever node you forgot.</p>
+<h2 id="closing">Closing</h2>
+<p>I don't think Octavia is badly built. The Amphora-plus-health-manager model is a reasonable way to get a real HAProxy instance per load balancer without inventing a custom control plane from scratch. But the amount of manual setup it expects from whoever's running Kolla-Ansible is bigger than the quick-start docs make it sound, and almost every failure mode I ran into was silent rather than loud.</p>
+<p>I still don't know if the OVS-internal-port approach is really the right long-term answer compared to a proper Neutron trunk port, and I haven't tried the OVN-native provider driver seriously enough yet to know whether its L7 gaps have closed since I last looked. If you've run Octavia in production on Kolla-Ansible and ended up with a different pattern for the management network, I'd genuinely like to hear what broke for you, and how you figured out it was broken in the first place.</p>
+
+      </article>
+
+      
+      
+      <div class="reaction right" data-endpoint="https:&#x2F;&#x2F;wwwaadityapageni.com.np&#x2F;api&#x2F;reaction"></div>
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2025 Aaditya Pageni
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+
+
+  <script src="https://www.aadityapageni.com.np/js/main.js"></script>
+</body>
+
+</html>
