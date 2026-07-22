@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="~">
+
+  <title>Compute Node Failover Architecture — vBMC + Pacemaker + Masakari HA</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.aadityapageni.com.np/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.aadityapageni.com.np/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.aadityapageni.com.np/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://www.aadityapageni.com.np/main.css">
+  
+
+<link id="hl" rel="stylesheet" type="text/css" href="/hl-light.css" />
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/giallo-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#table-of-contents">Table of Contents</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#1-introduction">1. Introduction</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#2-architectural-flow">2. Architectural Flow</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#2-1-end-to-end-failure-recovery-sequence">2.1 End-to-End Failure &amp; Recovery Sequence</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#2-2-fencing-sub-flow-diagram">2.2 Fencing Sub-Flow Diagram</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#3-prerequisites">3. Prerequisites</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#4-configuration-guide">4. Configuration Guide</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#4-1-step-1-initialize-virtual-bmc-on-the-physical-hypervisor">4.1 Step 1 — Initialize Virtual BMC on the Physical Hypervisor</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#4-2-step-2-install-configure-corosync-on-compute-nodes">4.2 Step 2 — Install &amp; Configure Corosync on Compute Nodes</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#4-3-step-3-establish-quorum-via-qdevice">4.3 Step 3 — Establish Quorum via QDevice</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#4-4-step-4-configure-pacemaker-stonith-to-target-vbmc-endpoints">4.4 Step 4 — Configure Pacemaker STONITH to Target vBMC Endpoints</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#4-5-step-5-configure-kolla-ansible-for-masakari-instance-ha">4.5 Step 5 — Configure Kolla-Ansible for Masakari (Instance HA)</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#4-6-step-6-align-masakari-checks-for-vbmc-compatibility">4.6 Step 6 — Align Masakari Checks for vBMC Compatibility</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#4-7-step-7-map-masakari-hosts-to-the-openstack-dashboard">4.7 Step 7 — Map Masakari Hosts to the OpenStack Dashboard</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#5-validation-testing">5. Validation &amp; Testing</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#5-1-manual-fencing-validation">5.1 Manual Fencing Validation</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#5-2-full-fencing-test-procedure">5.2 Full Fencing Test Procedure</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#6-troubleshooting">6. Troubleshooting</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#7-recovery-restoring-a-fenced-compute-node">7. Recovery — Restoring a Fenced Compute Node</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#8-appendix-reference-log-samples">8. Appendix — Reference Log Samples</a>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>Compute Node Failover Architecture — vBMC + Pacemaker + Masakari HA</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Jul 22, 2026</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://www.aadityapageni.com.np/tags/openstack"><span>#</span>openstack</a><a class="instant" href="https://www.aadityapageni.com.np/tags/masakari"><span>#</span>masakari</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li>Introduction</li>
+<li>Architectural Flow</li>
+</ol>
+<ul>
+<li>2.1 End-to-End Failure &amp; Recovery Sequence</li>
+<li>2.2 Fencing Sub-Flow Diagram</li>
+</ul>
+<ol start="3">
+<li>Prerequisites</li>
+<li>Configuration Guide</li>
+</ol>
+<ul>
+<li>4.1 Step 1 — Initialize Virtual BMC on the Physical Hypervisor</li>
+<li>4.2 Step 2 — Install &amp; Configure Corosync on Compute Nodes</li>
+<li>4.3 Step 3 — Establish Quorum via QDevice</li>
+<li>4.4 Step 4 — Configure Pacemaker STONITH to Target vBMC Endpoints</li>
+<li>4.5 Step 5 — Configure Kolla-Ansible for Masakari (Instance HA)</li>
+<li>4.6 Step 6 — Align Masakari Checks for vBMC Compatibility</li>
+<li>4.7 Step 7 — Map Masakari Hosts to the OpenStack Dashboard</li>
+</ul>
+<ol start="5">
+<li>Validation &amp; Testing</li>
+</ol>
+<ul>
+<li>5.1 Manual Fencing Validation</li>
+<li>5.2 Full Fencing Test Procedure</li>
+</ul>
+<ol start="6">
+<li>Troubleshooting</li>
+<li>Recovery — Restoring a Fenced Compute Node</li>
+<li>Appendix — Reference Log Samples</li>
+</ol>
+<hr />
+<h2 id="1-introduction">1. Introduction</h2>
+<p>This document describes the high-availability (HA) architecture that protects OpenStack compute nodes against unplanned host failure. It combines three layers:</p>
+<ul>
+<li><strong>Pacemaker/Corosync</strong> — cluster membership, quorum, and failure detection at the host level.</li>
+<li><strong>vBMC (Virtual BMC)</strong> — translates standard IPMI network commands into libvirt API calls, allowing STONITH fencing to work against virtualized compute nodes exactly as it would against physical hardware with a real BMC.</li>
+<li><strong>Masakari</strong> — OpenStack's instance-HA service, which listens for confirmed host-failure events and automatically evacuates instances to a healthy compute node.</li>
+</ul>
+<p>Because vBMC translates standard IPMI network commands into libvirt API calls, the Pacemaker <code>fence_ipmilan</code> agent cannot tell the difference between virtual hardware and a physical motherboard. This is what allows the same STONITH tooling used on physical racks to work unmodified in a virtualized/nested compute environment.</p>
+<hr />
+<h2 id="2-architectural-flow">2. Architectural Flow</h2>
+<h3 id="2-1-end-to-end-failure-recovery-sequence">2.1 End-to-End Failure &amp; Recovery Sequence</h3>
+<p>The table below sequences the complete failure-to-recovery flow in the order it actually executes, from initial failure detection through to Masakari reporting a finished recovery.</p>
+<table><thead><tr><th>#</th><th>Stage</th><th>Action</th></tr></thead><tbody>
+<tr><td>1</td><td>Failure occurs</td><td>Compute node fails (network isolation / crash)</td></tr>
+<tr><td>2</td><td>Detection</td><td>Pacemaker detects node OFFLINE/UNCLEAN</td></tr>
+<tr><td>3</td><td>Fencing initiated</td><td>Pacemaker executes STONITH: <code>fence_ipmilan</code> → vBMC → <code>virsh destroy</code></td></tr>
+<tr><td>4</td><td>Fencing executed</td><td>vBMC powers off the compute VM</td></tr>
+<tr><td>5</td><td>Host-monitor detection</td><td>Masakari hostmonitor detects node offline in Corosync</td></tr>
+<tr><td>6</td><td>Notification</td><td>Hostmonitor sends <code>COMPUTE_HOST</code> notification to the Masakari API</td></tr>
+<tr><td>7</td><td>Engine intake</td><td>Masakari engine processes the notification</td></tr>
+<tr><td>8</td><td>Power-state verification</td><td>Engine verifies host is powered off (IPMI check — succeeds because vBMC turned it off)</td></tr>
+<tr><td>9</td><td>Service disable</td><td>Engine disables <code>nova-compute</code> for the failed host</td></tr>
+<tr><td>10</td><td>Instance lock</td><td>Engine locks instances on the failed host</td></tr>
+<tr><td>11</td><td>Evacuation call</td><td>Engine calls <code>nova evacuate</code> for each instance</td></tr>
+<tr><td>12</td><td>Instance rebuild</td><td>Instances rebuild on a healthy host (shared Ceph RBD storage)</td></tr>
+<tr><td>13</td><td>Instance unlock</td><td>Engine unlocks the instances</td></tr>
+<tr><td>14</td><td>Completion</td><td>Notification status: <code>finished</code></td></tr>
+</tbody></table>
+<p><strong>Why fencing must come before evacuation:</strong> Steps 3–4 are a hard prerequisite for step 11. If a "failed" host is not actually confirmed dead, evacuating its instances elsewhere while the original host is still running risks the same instance running twice against shared Ceph RBD storage — a split-brain condition. The IPMI power-state check at step 8 is what gives Masakari the confidence to proceed.</p>
+<h3 id="2-2-fencing-sub-flow-diagram">2.2 Fencing Sub-Flow Diagram</h3>
+<p>The diagram below expands steps 2–4 above — the portion of the flow that happens entirely within Pacemaker and vBMC, before Masakari is ever notified.</p>
+<pre><code>   [Pacemaker Cluster (compute-node-01)]
+                   │
+         (Detects node failure)
+                   │
+                   ▼
+   [Executes fence_ipmilan Command]
+                   │
+       (Sends UDP 623 IPMI Packet)
+                   │
+                   ▼
+     [vBMC Daemon (on KVM Hypervisor)]
+                   │
+    (Translates to virsh destroy command)
+                   │
+                   ▼
+   [KVM Hypervisor kills compute-node-02 VM]
+</code></pre>
+<hr />
+<h2 id="3-prerequisites">3. Prerequisites</h2>
+<ul>
+<li>A dedicated <strong>KVM/Libvirt Hypervisor</strong> hosting the two virtual compute node instances.</li>
+<li>The <code>virtualbmc</code> python package running on that physical hypervisor machine.</li>
+<li>Firewall rules permitting <strong>UDP port 623</strong> (IPMI over LAN traffic) between the compute nodes and the vBMC server.</li>
+</ul>
+<hr />
+<h2 id="4-configuration-guide">4. Configuration Guide</h2>
+<h3 id="4-1-step-1-initialize-virtual-bmc-on-the-physical-hypervisor">4.1 Step 1 — Initialize Virtual BMC on the Physical Hypervisor</h3>
+<p>Run these steps on the <strong>underlying KVM host</strong> where your virtual compute nodes are running. Do not run this inside the OpenStack nodes.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># 1. Install virtualbmc
+sudo pip3 install virtualbmc
+
+root@compute2:~# for vm in $(virsh list --all --name); do echo -n &quot;$vm: &quot;; virsh dumpxml &quot;$vm&quot; 2&gt;&#x2F;dev&#x2F;null | grep -oP &#x27;(?&lt;=&lt;nova:name&gt;).*?(?=&lt;&#x2F;nova:name&gt;)&#x27;; done | grep &quot;Compute-1&quot;
+instance-00000104: Compute-1
+root@compute2:~# for vm in $(virsh list --all --name); do echo -n &quot;$vm: &quot;; virsh dumpxml &quot;$vm&quot; 2&gt;&#x2F;dev&#x2F;null | grep -oP &#x27;(?&lt;=&lt;nova:name&gt;).*?(?=&lt;&#x2F;nova:name&gt;)&#x27;; done | grep &quot;compute-2&quot;
+instance-000000ff: compute-2
+
+# 2. Add your compute VMs to the vBMC registry
+vbmc add instance-00000104 --port 6230 --username admin --password apple
+vbmc add instance-000000ff --port 6231 --username admin --password apple
+
+# 3. Start the virtual BMC endpoints
+vbmc start instance-00000104
+vbmc start instance-000000ff
+
+# 4. Verify vBMC is listening locally
+vbmc list
+</code></pre>
+<p><em>(Note down the IP address of this hypervisor machine; it will serve as the IPMI target IP inside Pacemaker.)</em></p>
+<h4 id="verify-vbmc-responds-to-ipmi-from-compute-nodes">Verify vBMC responds to IPMI from compute nodes</h4>
+<p>From <strong>compute1</strong>, test that it can reach the vBMC instances on the controller:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ipmitool -I lanplus \
+  -H 10.88.10.91 \
+  -p 6231 \
+  -U admin \
+  -P apple \
+  power status
+# Expected: Chassis Power is on
+
+ipmitool -I lanplus \
+  -H 192.168.100.10 \
+  -p 6232 \
+  -U admin \
+  -P fence-secret \
+  power status
+# Expected: Chassis Power is on
+</code></pre>
+<p>If either fails, check:</p>
+<ul>
+<li>vBMC is running (<code>vbmc list</code> shows Status: running)</li>
+<li>UDP port is open on the controller host (vBMC uses UDP, not TCP)</li>
+<li>Firewall isn't blocking the ports: <code>ufw allow 6231/udp &amp;&amp; ufw allow 6232/udp</code></li>
+</ul>
+<p><strong>Do not proceed past this point until both ipmitool checks return <code>Chassis Power is on</code>.</strong> A working vBMC is the entire foundation of the fencing test.</p>
+<h3 id="4-2-step-2-install-configure-corosync-on-compute-nodes">4.2 Step 2 — Install &amp; Configure Corosync on Compute Nodes</h3>
+<p>Pacemaker must be initialized directly on the compute node host operating systems (outside Kolla containers) to manage physical fencing.</p>
+<p>Run these steps on <strong>BOTH <code>compute-node-01</code> and <code>compute-node-02</code></strong>:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># 1. Install Pacemaker, Corosync, and IPMI fencing utilities
+sudo apt update
+sudo apt install pacemaker pcs fence-agents corosync-qdevice ipmitool -y
+
+# 2. Start and enable the configuration service
+sudo systemctl enable --now pcsd
+
+# 3. Set a matching cluster password for the &#x27;hacluster&#x27; system user
+echo &quot;hacluster:YourClusterSecretSecurePassword&quot; | sudo chpasswd
+</code></pre>
+<p>Next, from <strong><code>compute-node-01</code> ONLY</strong>, authenticate and build the cluster pool:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Authenticate the two compute hosts
+pcs host auth compute-1 compute-2 -u hacluster -p YourClusterSecretSecurePassword
+
+# Setup and start the corosync cluster
+pcs cluster setup compute_cluster compute-1 compute-2 (--force)
+pcs cluster start --all
+pcs cluster enable --all
+
+pcs status corosync
+</code></pre>
+<h3 id="4-3-step-3-establish-quorum-via-qdevice">4.3 Step 3 — Establish Quorum via QDevice</h3>
+<p>Because this is a 2-node cluster, losing one node drops your cluster votes to 50%, which disables fencing execution. We use a 3rd arbitrator host to bypass this.</p>
+<p>Log into your <strong>External Arbitrator Node</strong> (e.g., <code>controller-01</code>):</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Install and activate the lightweight network arbitrator daemon
+sudo apt update &amp;&amp; sudo apt install pcs corosync-qnetd -y
+sudo systemctl enable --now corosync-qnetd
+sudo pcs qdevice setup model net --enable --start
+sudo systemctl enable --now pcsd
+echo &quot;hacluster:YourClusterSecretSecurePassword&quot; | sudo chpasswd
+</code></pre>
+<p>Log back into <strong>BOTH <code>compute-node-01</code> and <code>compute-node-02</code></strong> to pull down the client agent:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">sudo apt install corosync-qdevice -y
+</code></pre>
+<p>From <strong><code>compute-node-01</code> ONLY</strong>, execute the TLS handshake and cluster link configuration:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Link your cluster nodes securely to the external arbitrator
+&gt; pcs quorum device add model net algorithm=lms host=10.0.0.110
+    Setting up qdevice certificates on nodes...
+    compute-2: Succeeded
+    compute-1: Succeeded
+    Enabling corosync-qdevice...
+    compute-2: corosync-qdevice enabled
+    compute-1: corosync-qdevice enabled
+    Sending updated corosync.conf to nodes...
+    compute-1: Succeeded
+    compute-2: Succeeded
+    compute-1: Corosync configuration reloaded
+    Starting corosync-qdevice...
+    compute-2: corosync-qdevice started
+    compute-1: corosync-qdevice started
+
+
+# Verify the cluster status reflects 3 active voting entities
+&gt; pcs quorum status
+
+    Quorum information
+    ------------------
+    Date:             Wed Jul  1 20:53:59 2026
+    Quorum provider:  corosync_votequorum
+    Nodes:            2
+    Node ID:          2
+    Ring ID:          1.e
+    Quorate:          Yes
+
+    Votequorum information
+    ----------------------
+    Expected votes:   3
+    Highest expected: 3
+    Total votes:      3
+    Quorum:           2  
+    Flags:            Quorate Qdevice 
+
+    Membership information
+    ----------------------
+        Nodeid      Votes    Qdevice Name
+            1          1    A,V,NMW compute-1
+            2          1    A,V,NMW compute-2 (local)
+            0          1            Qdevice
+</code></pre>
+<h3 id="4-4-step-4-configure-pacemaker-stonith-to-target-vbmc-endpoints">4.4 Step 4 — Configure Pacemaker STONITH to Target vBMC Endpoints</h3>
+<p>Log into <strong><code>compute-node-01</code></strong> (inside your OpenStack cluster) to map your STONITH resources. Instead of using the base IPMI port, specify the individual custom destination ports exposed by vBMC.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># 1. Create fencing target for Compute Node 01
+pcs stonith create fence_compute01 fence_ipmilan \
+  ip=&quot;10.88.10.91&quot; \
+  ipport=&quot;6230&quot; \
+  username=&quot;admin&quot; \
+  password=&quot;apple&quot; \
+  lanplus=1 \
+  pcmk_host_list=&quot;compute-1&quot; \
+  op monitor interval=60s
+
+# 2. Create fencing target for Compute Node 02
+pcs stonith create fence_compute02 fence_ipmilan \
+  ip=&quot;10.88.10.91&quot; \
+  ipport=&quot;6231&quot; \
+  username=&quot;admin&quot; \
+  password=&quot;apple&quot; \
+  lanplus=1 \
+  pcmk_host_list=&quot;compute-2&quot; \
+  op monitor interval=60s
+
+# 3. Apply a location constraint (Prevents a node from attempting to fence itself)
+pcs constraint location fence_compute01 avoids compute-1
+pcs constraint location fence_compute02 avoids compute-2
+
+# 4. Commit global STONITH activation
+pcs property set stonith-enabled=true   # enable STONITH fencing in the cluster
+pcs property set stonith-action=off    # this disables devices to reboot, instead it shit downs the other device
+</code></pre>
+<h3 id="4-5-step-5-configure-kolla-ansible-for-masakari-instance-ha">4.5 Step 5 — Configure Kolla-Ansible for Masakari (Instance HA)</h3>
+<p>With physical layer fencing ready, we instruct OpenStack to listen to Pacemaker cluster events and automate VM evacuations.</p>
+<p>On your <strong>Kolla Deployer machine</strong>, modify your <code>/etc/kolla/globals.yml</code> parameter file:</p>
+<pre data-lang="yaml" class="language-yaml "><code class="language-yaml" data-lang="yaml">enable_masakari: &quot;yes&quot;
+enable_masakari_hostmonitor: &quot;no&quot;
+enable_masakari_instancemonitor: &quot;yes&quot;
+enable_hacluster: &quot;yes&quot;
+</code></pre>
+<p>In the inventory file, disable <code>hacluster_pacemaker_remote</code> on compute nodes by removing:</p>
+<pre><code>[hacluster-remote:children]
+compute 						#&lt;- remove this
+</code></pre>
+<p>Install masakari-hostmonitor natively:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">pip install masakari-monitors --break-system-packages --ignore-installed
+
+pip install --upgrade pyOpenSSL cryptography --break-system-packages
+
+python3 -c &quot;from OpenSSL import SSL; print(&#x27;ok&#x27;)&quot;
+</code></pre>
+<ul>
+<li>Configure Masakari Host Monitor with API credentials, Pacemaker/Corosync settings, and logging:</li>
+</ul>
+<p><code>/etc/masakarimonitors/masakarimonitors.conf</code>:</p>
+<pre data-lang="ini" class="language-ini "><code class="language-ini" data-lang="ini">[DEFAULT]
+debug = False
+log_dir = &#x2F;var&#x2F;log&#x2F;kolla&#x2F;masakari
+
+[api]
+region = RegionOne
+auth_url = http:&#x2F;&#x2F;10.0.0.100:5000
+user_domain_id = default
+project_name = service
+project_domain_id = default
+username = masakari
+password = W6OE7FAoqxtYzzskyQ4NeEUbhBqsx3JfFXFW031s
+cafile =
+api_interface = internal
+
+[host]
+restrict_to_remotes = false
+disable_ipmi_check = true
+pacemaker_node_type = cluster
+corosync_multicast_interfaces = ens3
+corosync_multicast_ports = 5405
+
+[oslo_concurrency]
+lock_path = &#x2F;var&#x2F;lib&#x2F;masakari&#x2F;tmp
+</code></pre>
+<p><code>/etc/systemd/system/masakari-hostmonitor.service</code>:</p>
+<pre data-lang="ini" class="language-ini "><code class="language-ini" data-lang="ini">[Unit]
+Description=Masakari Host Monitor
+After=network-online.target corosync.service pacemaker.service
+Wants=network-online.target
+Requires=corosync.service pacemaker.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=&#x2F;usr&#x2F;local&#x2F;bin&#x2F;masakari-hostmonitor \
+  --config-file=&#x2F;etc&#x2F;masakarimonitors&#x2F;masakarimonitors.conf
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:&#x2F;var&#x2F;log&#x2F;kolla&#x2F;masakari&#x2F;masakari-hostmonitor.log
+StandardError=append:&#x2F;var&#x2F;log&#x2F;kolla&#x2F;masakari&#x2F;masakari-hostmonitor.log
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+<p>Enable and verify the service:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">mkdir -p &#x2F;var&#x2F;log&#x2F;kolla&#x2F;masakari
+systemctl daemon-reload
+systemctl enable --now masakari-hostmonitor
+systemctl status masakari-hostmonitor
+journalctl -u masakari-hostmonitor -f
+</code></pre>
+<h3 id="4-6-step-6-align-masakari-checks-for-vbmc-compatibility">4.6 Step 6 — Align Masakari Checks for vBMC Compatibility</h3>
+<p>Masakari verifies power statuses via the native tool <code>ipmitool</code>. Open your <code>/etc/kolla/config/masakari.conf</code> custom configuration override file on your deployment machine and include the port parameters so Masakari maps to the vBMC framework correctly:</p>
+<pre data-lang="ini" class="language-ini "><code class="language-ini" data-lang="ini">[host]
+monitoring_driver = default
+disable_ipmi_check = False
+ipmi_timeout = 15
+
+# Custom overrides to force ipmitool to find vBMC instances over unique ports
+# You can leave this out if you use unique IPs for vBMC instances rather than unique ports.
+</code></pre>
+<p><em>Note: If both vBMC endpoints share a single hypervisor host IP, ensure your Masakari monitoring configurations can query the custom ports (<code>6230</code>/<code>6231</code>). If using a flat network map with discrete virtual IPs mapped per vBMC node, the standard default port definitions suffice.</em></p>
+<p>Re-run the deployment playbook to finalize the infrastructure container logic:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">kolla-ansible -i &#x2F;path&#x2F;to&#x2F;inventory&#x2F;multinode deploy
+</code></pre>
+<h3 id="4-7-step-7-map-masakari-hosts-to-the-openstack-dashboard">4.7 Step 7 — Map Masakari Hosts to the OpenStack Dashboard</h3>
+<p>For Masakari to manage failures, the compute nodes must be explicitly registered inside the Masakari API segment. Run these sourcing commands inside your OpenStack CLI environment:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Source openstack administrative credentials
+source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh
+
+# 1. Form a high-availability segment pool
+openstack ha segment create HA-Compute-Segment --recovery_method auto
+
+# 2. Link Compute Node 01 to the segment
+openstack ha host create \
+  --type COMPUTE \
+  --control_attributes SSH \
+  --on_maintenance False \
+  HA-Compute-Segment compute-node-01
+
+# 3. Link Compute Node 02 to the segment
+openstack ha host create \
+  --type COMPUTE \
+  --control_attributes SSH \
+  --on_maintenance False \
+  HA-Compute-Segment compute-node-02
+</code></pre>
+<hr />
+<h2 id="5-validation-testing">5. Validation &amp; Testing</h2>
+<h3 id="5-1-manual-fencing-validation">5.1 Manual Fencing Validation</h3>
+<p>Verify the setup manually by triggering a fence execution command directly from the cluster terminal interface:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Force-fence compute-node-02 from compute-node-01
+pcs stonith fence compute-02
+</code></pre>
+<p><strong>What to expect:</strong></p>
+<ol>
+<li>Pacemaker hits <code>fence_ipmilan</code> targeting <code>&lt;HYPERVISOR_HOST_IP&gt;:6231</code>.</li>
+<li>The <code>vbmc</code> engine handles the payload and invokes a local <code>virsh destroy compute-node-02</code> instruction against the VM container on the host.</li>
+<li>The virtual instance of <code>compute-node-02</code> immediately powers off, forcing the Masakari pipeline to safely begin VM evacuations onto <code>compute-node-01</code>.</li>
+</ol>
+<h3 id="5-2-full-fencing-test-procedure">5.2 Full Fencing Test Procedure</h3>
+<p>Everything is in place. Now break compute2 and watch the full flow.</p>
+<h4 id="5-2-1-pre-test-setup">5.2.1 Pre-test setup</h4>
+<p>Open three terminal windows before starting:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Terminal 1 — masakari-engine logs (controller)
+docker logs -f masakari_engine
+
+# Terminal 2 — Pacemaker fencing log (compute1)
+tail -f &#x2F;var&#x2F;log&#x2F;pacemaker&#x2F;pacemaker.log | grep -i -E &quot;fence|stonith|ipmi&quot;
+
+# Terminal 3 — cluster status polling (compute1)
+watch -n 2 pcs status
+</code></pre>
+<p>Confirm the cluster is healthy before starting — all green in Terminal 3, no errors in Terminals 1 and 2.</p>
+<h4 id="5-2-2-launch-a-test-instance-on-compute2">5.2.2 Launch a test instance on compute2</h4>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># On the controller
+openstack server create \
+  --flavor m1.tiny \
+  --image &lt;your-image&gt; \
+  --availability-zone nova:compute2-vm \
+  test-evacuation-vm
+
+openstack server list --host compute2-vm
+</code></pre>
+<p>Confirm the instance is ACTIVE on compute2 before proceeding.</p>
+<h4 id="5-2-3-simulate-compute2-failure">5.2.3 Simulate compute2 failure</h4>
+<p>The most realistic test — network isolation, node stays powered on (simulating a hung/unresponsive node). Since compute2 is a virtual compute node, this can be simulated by disabling the security group governing its network access rather than using iptables:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># On the controller — disable&#x2F;remove the security group rules allowing traffic to compute2
+openstack security group rule list &lt;compute2-security-group&gt;
+openstack security group rule delete &lt;rule-id&gt;
+</code></pre>
+<p>Removing the security group access cuts all connectivity from compute2 while leaving it technically powered on — the exact scenario where split-brain is a real risk without fencing.</p>
+<p>Supplementary commands used during testing:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">curl -s -X POST http:&#x2F;&#x2F;10.0.0.100:15868&#x2F;v1&#x2F;notifications \
+  -H &quot;X-Auth-Token: $(openstack token issue -c id -f value)&quot; \
+  -H &quot;Content-Type: application&#x2F;json&quot; \
+  -d &#x27;{&quot;notification&quot;:{&quot;type&quot;:&quot;COMPUTE_HOST&quot;,&quot;hostname&quot;:&quot;compute-2&quot;,&quot;generated_time&quot;:&quot;&#x27;&quot;$(date -u +%Y-%m-%dT%H:%M:%S)&quot;&#x27;&quot;,&quot;payload&quot;:{&quot;event&quot;:&quot;STOPPED&quot;,&quot;host_status&quot;:&quot;NORMAL&quot;,&quot;cluster_status&quot;:&quot;OFFLINE&quot;}}}&#x27;
+</code></pre>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">sudo bash -c &#x27;source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh &amp;&amp; openstack compute service set --down compute-1 nova-compute &amp;&amp; openstack compute service list --host compute-1&#x27; 2&gt;&#x2F;dev&#x2F;null
+</code></pre>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">sudo bash -c &#x27;source &#x2F;etc&#x2F;kolla&#x2F;admin-openrc.sh &amp;&amp; openstack server show test-evacuate-vm -c status -c &quot;OS-EXT-SRV-ATTR:hypervisor_hostname&quot; -c &quot;OS-EXT-STS:vm_state&quot; -c addresses -c &quot;OS-EXT-STS:power_state&quot; -f yaml&#x27; 2&gt;&#x2F;dev&#x2F;null
+</code></pre>
+<h4 id="5-2-4-watch-the-sequence-in-your-terminals">5.2.4 Watch the sequence in your terminals</h4>
+<p>The sequence you should observe (timing will vary based on Corosync timeouts):</p>
+<p><strong>~30–60 seconds:</strong> Terminal 3 shows compute2-vm dropping from Online to OFFLINE or UNCLEAN.</p>
+<p><strong>~60–90 seconds:</strong> Terminal 2 shows Pacemaker initiating STONITH:</p>
+<pre><code>notice:  Initiating fencing operation for node compute2-vm
+notice:  Requesting fencing (off) of node compute2-vm
+</code></pre>
+<p><strong>~90 seconds:</strong> <code>fence_ipmilan</code> fires against vBMC port 6232. Verify from the controller:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">ipmitool -I lanplus -H 192.168.100.10 -p 6232 -U admin -P fence-secret power status
+# Should now return: Chassis Power is off
+</code></pre>
+<p><strong>After fencing confirms:</strong> Terminal 1 shows masakari-engine processing the host_failure and beginning evacuation:</p>
+<pre><code>host_failure notification received for compute2-vm
+executing host_failure_workflow
+</code></pre>
+<p><strong>~2–5 minutes (depending on your evacuation timeout config):</strong> The test instance should be ACTIVE on compute1:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">openstack server list --host compute1-vm
+</code></pre>
+<hr />
+<h2 id="6-troubleshooting">6. Troubleshooting</h2>
+<table><thead><tr><th>Symptom</th><th>Likely Cause / Check</th></tr></thead><tbody>
+<tr><td>compute2 shows UNCLEAN but fencing never fires</td><td><code>fence_ipmilan</code> can't reach vBMC. Check <code>vbmc list</code> on the controller (still running?), check UDP port reachability from compute1 to controller port 6232.</td></tr>
+<tr><td>Fencing fires but evacuation never starts</td><td>Masakari failover segment not configured, or masakari-hostmonitor isn't watching the right Corosync ring. Check <code>docker logs masakari_hostmonitor</code>.</td></tr>
+<tr><td>Cluster loses quorum entirely (both nodes offline)</td><td>The delay parameter race. Check that <code>delay=15</code> is only on fence-compute1, not both. If both nodes fenced each other simultaneously, this is the cause.</td></tr>
+<tr><td><code>pcs stonith</code> test passes but real fencing fails</td><td>Check that the fence resource is actually running on the <em>other</em> node (location constraints working), and that the node trying to fence can reach vBMC.</td></tr>
+</tbody></table>
+<p>Additional reference — service status check during troubleshooting:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">openstack compute service list --service nova-compute
++--------------------------------------+--------------+-----------+------+----------+-------+----------------------------+
+| ID                                   | Binary       | Host      | Zone | Status   | State | Updated At                 |
++--------------------------------------+--------------+-----------+------+----------+-------+----------------------------+
+| bb6f2c4f-02b9-49e1-bcb2-b0ec3998ac42 | nova-compute | compute-1 | nova | enabled  | up    | 2026-07-07T15:05:11.000000 |
+| d1f7cf1e-fdc9-46da-b6db-4deb5e49bf69 | nova-compute | compute-2 | nova | disabled | up    | 2026-07-07T15:05:03.000000 |
++--------------------------------------+--------------+-----------+------+----------+-------+----------------------------+
+</code></pre>
+<p>Reference log sample — notification rejected because host is already under maintenance:</p>
+<pre><code>2026-07-09 16:32:17.147 384347 INFO masakarimonitors.ha.masakari [-] Send a notification. {&#x27;notification&#x27;: {&#x27;type&#x27;: &#x27;COMPUTE_HOST&#x27;, &#x27;hostname&#x27;: &#x27;compute-2&#x27;, &#x27;generated_time&#x27;: datetime.datetime(2026, 7, 9, 10, 47, 17, 147538), &#x27;payload&#x27;: {&#x27;event&#x27;: &#x27;STARTED&#x27;, &#x27;cluster_status&#x27;: &#x27;ONLINE&#x27;, &#x27;host_status&#x27;: &#x27;NORMAL&#x27;}}}
+2026-07-09 16:32:17.257 384347 INFO masakarimonitors.ha.masakari [-] ConflictException: 409: Client Error for url: http:&#x2F;&#x2F;10.0.0.100:15868&#x2F;v1&#x2F;notifications, Notification received from host compute-2 of type &#x27;COMPUTE_HOST&#x27; is ignored as the host is already under maintenance.
+</code></pre>
+<p>Reference log sample — engine disabling nova-compute before recovery:</p>
+<pre><code>2026-07-09 17:00:31.118 7 INFO masakari.compute.nova [req-9bb4f55f-ab95-4c48-b9bb-d353d7533f88 req-4792b022-753d-450b-9cef-9cee61dd1278 nova - - - - -] Disable nova-compute on compute-1
+2026-07-09 17:00:31.252 7 INFO masakari.engine.drivers.taskflow.host_failure [req-9bb4f55f-ab95-4c48-b9bb-d353d7533f88 req-4792b022-753d-450b-9cef-9cee61dd1278 nova - - - - -] Sleeping 180 sec before starting recovery thread until nova recognizes the node down.
+</code></pre>
+<hr />
+<h2 id="7-recovery-restoring-a-fenced-compute-node">7. Recovery — Restoring a Fenced Compute Node</h2>
+<p>After a successful test, compute2 is powered off (libvirt VM is down). Bring it back:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># On the hypervisor host &#x2F; controller
+virsh start compute2-vm
+</code></pre>
+<p>Wait for the VM to boot, then on the now-running compute2:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># Remove the iptables block if it persisted across reboot (usually doesn&#x27;t)
+iptables -F
+
+# Restart cluster services if they didn&#x27;t auto-start
+systemctl start corosync pacemaker
+</code></pre>
+<p>Verify compute2 rejoins the cluster:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># On compute1
+pcs status
+# compute2-vm should return to Online
+</code></pre>
+<p>Clear any stale Pacemaker failure state:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">pcs resource cleanup
+</code></pre>
+<p>Confirm qdevice still shows 3 votes:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">pcs quorum status
+# Expected votes: 3, Total votes: 3
+</code></pre>
+<p>Decide whether to rebalance the evacuated instance back to compute2 — Masakari doesn't do this automatically. You can live-migrate it back manually if needed:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">openstack server migrate --live-migration --host compute2-vm test-evacuation-vm
+</code></pre>
+<hr />
+<h2 id="8-appendix-reference-log-samples">8. Appendix — Reference Log Samples</h2>
+<p>This section consolidates the raw log excerpts referenced throughout the document for quick lookup.</p>
+<p><strong>Masakari monitor — maintenance conflict:</strong></p>
+<pre><code>2026-07-09 16:32:17.147 384347 INFO masakarimonitors.ha.masakari [-] Send a notification. {&#x27;notification&#x27;: {&#x27;type&#x27;: &#x27;COMPUTE_HOST&#x27;, &#x27;hostname&#x27;: &#x27;compute-2&#x27;, &#x27;generated_time&#x27;: datetime.datetime(2026, 7, 9, 10, 47, 17, 147538), &#x27;payload&#x27;: {&#x27;event&#x27;: &#x27;STARTED&#x27;, &#x27;cluster_status&#x27;: &#x27;ONLINE&#x27;, &#x27;host_status&#x27;: &#x27;NORMAL&#x27;}}}
+2026-07-09 16:32:17.257 384347 INFO masakarimonitors.ha.masakari [-] ConflictException: 409: Client Error for url: http:&#x2F;&#x2F;10.0.0.100:15868&#x2F;v1&#x2F;notifications, Notification received from host compute-2 of type &#x27;COMPUTE_HOST&#x27; is ignored as the host is already under maintenance.
+</code></pre>
+<p><strong>Masakari engine — service disable before recovery:</strong></p>
+<pre><code>2026-07-09 17:00:31.118 7 INFO masakari.compute.nova [req-9bb4f55f-ab95-4c48-b9bb-d353d7533f88 req-4792b022-753d-450b-9cef-9cee61dd1278 nova - - - - -] Disable nova-compute on compute-1
+2026-07-09 17:00:31.252 7 INFO masakari.engine.drivers.taskflow.host_failure [req-9bb4f55f-ab95-4c48-b9bb-d353d7533f88 req-4792b022-753d-450b-9cef-9cee61dd1278 nova - - - - -] Sleeping 180 sec before starting recovery thread until nova recognizes the node down.
+</code></pre>
+
+      </article>
+
+      
+      
+      <div class="reaction right" data-endpoint="https:&#x2F;&#x2F;wwwaadityapageni.com.np&#x2F;api&#x2F;reaction"></div>
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2025 Aaditya Pageni
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+
+
+  <script src="https://www.aadityapageni.com.np/js/main.js"></script>
+</body>
+
+</html>
