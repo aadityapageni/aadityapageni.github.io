@@ -7,31 +7,6 @@ tags = ["openstack","masakari"]
 mermaid = true
 +++
 
-
-## Table of Contents
-
-1. Introduction
-2. Architectural Flow
-  - 2.1 End-to-End Failure & Recovery Sequence
-  - 2.2 Fencing Sub-Flow Diagram
-3. Prerequisites
-4. Configuration Guide
-  - 4.1 Step 1 — Initialize Virtual BMC on the Physical Hypervisor
-  - 4.2 Step 2 — Install & Configure Corosync on Compute Nodes
-  - 4.3 Step 3 — Establish Quorum via QDevice
-  - 4.4 Step 4 — Configure Pacemaker STONITH to Target vBMC Endpoints
-  - 4.5 Step 5 — Configure Kolla-Ansible for Masakari (Instance HA)
-  - 4.6 Step 6 — Align Masakari Checks for vBMC Compatibility
-  - 4.7 Step 7 — Map Masakari Hosts to the OpenStack Dashboard
-5. Validation & Testing
-  - 5.1 Manual Fencing Validation
-  - 5.2 Full Fencing Test Procedure
-6. Troubleshooting
-7. Recovery — Restoring a Fenced Compute Node
-8. Appendix — Reference Log Samples
-
----
-
 ## 1. Introduction
 
 This document describes the high-availability (HA) architecture that protects OpenStack compute nodes against unplanned host failure. It combines three layers:
