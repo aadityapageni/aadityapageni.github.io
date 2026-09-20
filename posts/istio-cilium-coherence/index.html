@@ -567,7 +567,8 @@ Istio CNI
 </code></pre>
 <p>No Envoy sidecar inside the app Pod. Traffic enters the node-level Ambient plane instead. That's Ambient's defining trait.</p>
 <p><strong>ztunnel = the L4 layer.</strong> One per node, serving every workload on it. Handles identity, mTLS, L4 authorization, L4 telemetry, secure transport. istiod supplies its config and certs.</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;payments Pod&quot;]
     C[&quot;Cilium eBPF&quot;]
     Z1[&quot;source ztunnel&quot;]
@@ -580,8 +581,7 @@ Istio CNI
     Z1 --&gt; H
     H --&gt; Z2
     Z2 --&gt; D
-</code></pre>
-<h3 id="where-mtls-actually-kicks-in">Where mTLS actually kicks in</h3>
+</pre><h3 id="where-mtls-actually-kicks-in">Where mTLS actually kicks in</h3>
 <p>App sends <code>GET /products</code>, thinks it's just HTTP. Once Ambient has it, the hop is secured via mTLS over HBONE (HTTP/2 + HTTP CONNECT + mTLS). All inbound/outbound L4 TCP traffic in the mesh is secured this way, backed by workload X.509 identities.</p>
 <pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Application request
 
@@ -605,7 +605,8 @@ L4 authorization
 secure transport
 </code></pre>
 <p>Then the path can remain:</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;payments&quot;]
     Z1[&quot;ztunnel&quot;]
     N[&quot;Cluster Network&quot;]
@@ -616,7 +617,7 @@ secure transport
     Z1 --&gt;|&quot;mTLS &#x2F; HBONE&quot;| N
     N --&gt; Z2
     Z2 --&gt; B
-</code></pre>
+</pre>
 <p>There is no reason to introduce an L7 proxy just because the workload needs mTLS.</p>
 <p>This is one of the most compelling ideas in Ambient:</p>
 <blockquote>
@@ -631,7 +632,8 @@ request-level telemetry
 traffic management
 </code></pre>
 <p>The path changes:</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;payments Pod&quot;]
     Z1[&quot;source ztunnel&quot;]
     W[&quot;Istio Waypoint&lt;br&#x2F;&gt;Envoy&quot;]
@@ -642,7 +644,7 @@ traffic management
     Z1 --&gt;|&quot;HBONE&quot;| W
     W --&gt;|&quot;L7 processing&quot;| Z2
     Z2 --&gt; B
-</code></pre>
+</pre>
 <p>The waypoint becomes the L7 decision point.</p>
 <p>It can evaluate things like:</p>
 <pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">HTTP method
@@ -693,7 +695,8 @@ destination
 <p>Those labels are technically correct but hide what actually happens to the traffic.</p>
 <h2 id="the-first-important-traffic-example-cilium-only">The first important traffic example: Cilium only</h2>
 <p>Start without the mesh.</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;payments Pod&quot;]
     C1[&quot;Cilium eBPF&quot;]
     N[&quot;Network&quot;]
@@ -704,7 +707,7 @@ destination
     C1 --&gt; N
     N --&gt; C2
     C2 --&gt; B
-</code></pre>
+</pre>
 <p>Cilium handles the networking.</p>
 <p>There is no ztunnel.</p>
 <p>There is no waypoint.</p>
@@ -712,7 +715,8 @@ destination
 <p>This is the baseline.</p>
 <h2 id="the-second-traffic-example-ambient-l4">The second traffic example: Ambient L4</h2>
 <p>Now put both workloads into Ambient.</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;payments Pod&quot;]
     C1[&quot;Cilium&quot;]
     Z1[&quot;ztunnel&quot;]
@@ -727,7 +731,7 @@ destination
     H --&gt; Z2
     Z2 --&gt; C2
     C2 --&gt; B
-</code></pre>
+</pre>
 <p>Now the application gets:</p>
 <pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">workload identity
 +
@@ -738,7 +742,8 @@ L4 mesh policy
 <p>without putting an Envoy sidecar inside the application Pod.</p>
 <h2 id="the-third-traffic-example-ambient-l7">The third traffic example: Ambient + L7</h2>
 <p>Now introduce the waypoint.</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;payments Pod&quot;]
     C[&quot;Cilium&quot;]
     Z1[&quot;ztunnel&quot;]
@@ -752,7 +757,7 @@ L4 mesh policy
     W --&gt;|&quot;HTTP &#x2F; L7 policy&quot;| Z2
     Z2 --&gt; C
     C --&gt; B
-</code></pre>
+</pre>
 <p>Now the traffic can be controlled at two levels:</p>
 <pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Cilium
     |
@@ -771,14 +776,15 @@ Application
 DENY
 </code></pre>
 <p>The decision happens before the request has any reason to reach the application.</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;payments&quot;]
     C[&quot;Cilium eBPF&quot;]
     X[&quot;DROP&quot;]
 
     A --&gt; C
     C --&gt;|&quot;DENY&quot;| X
-</code></pre>
+</pre>
 <p>Istio does not replace that network boundary.</p>
 <p>Cilium remains the layer that protects the network.</p>
 <h2 id="the-fifth-traffic-example-cilium-allows-istio-denies">The fifth traffic example: Cilium allows, Istio denies</h2>
@@ -791,7 +797,8 @@ TCP&#x2F;8080
 <pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">GET &#x2F;admin
 </code></pre>
 <p>and the waypoint's authorization policy does not permit it.</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;payments&quot;]
     C[&quot;Cilium&lt;br&#x2F;&gt;L3&#x2F;L4 ALLOW&quot;]
     Z[&quot;ztunnel&quot;]
@@ -802,7 +809,7 @@ TCP&#x2F;8080
     C --&gt; Z
     Z --&gt; W
     W --&gt; X
-</code></pre>
+</pre>
 <p>This is the layered security model:</p>
 <pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Cilium:
     Can the connection exist?
@@ -822,7 +829,8 @@ Istio:
 <pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">I need to inspect the HTTP request
 </code></pre>
 <p>Now there is a fundamental conflict.</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;Application&quot;]
     Z[&quot;Istio ztunnel&quot;]
     E[&quot;mTLS &#x2F; HBONE&quot;]
@@ -833,7 +841,7 @@ Istio:
     E --&gt; C
 
     C -.-&gt;|&quot;Cannot inspect original HTTP&quot;| X[&quot;L7 ownership conflict&quot;]
-</code></pre>
+</pre>
 <p>This isn't a theoretical concern.</p>
 <p>Cilium's own Istio integration documentation demonstrates the interaction between Ambient mTLS and Cilium L7 policy and warns about the resulting conflict when Cilium's HTTP proxy is used on Ambient-managed traffic.</p>
 <p>The lesson is not:</p>
@@ -859,7 +867,8 @@ Istio:
 <p>Either works. Mixing them is where it breaks.</p>
 <h1 id="don-t-forget-the-service-itself">Don't forget the Service itself</h1>
 <p>Apps call <code>catalog.default.svc.cluster.local</code>, not a Pod IP. With kube-proxy replacement, that LB runs in Cilium's eBPF datapath:</p>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+<pre class="mermaid">
+  flowchart LR
     A[&quot;payments&quot;]
     S[&quot;catalog Service&quot;]
     C[&quot;Cilium eBPF Service LB&quot;]
@@ -872,7 +881,7 @@ Istio:
     C --&gt; B1
     C --&gt; B2
     C --&gt; B3
-</code></pre>
+</pre>
 <p>Kubernetes Service LB (network layer) is a different thing from Istio's application-aware traffic management (waypoint can do HTTPRoute-driven L7 LB too). Question isn't "which supports LB" — both do. It's <strong>which layer should make the decision.</strong></p>
 <h1 id="the-detail-that-actually-bites-people">The detail that actually bites people</h1>
 <p>Cilium's kube-proxy replacement is architecturally nice — one less component. But its socket-level LB can collide with Istio's interception.</p>
@@ -886,7 +895,8 @@ cni.exclusive = false
 <p>Even when Cilium and Istio own different layers, their implementations still meet at the traffic-interception boundary. That boundary has to be designed on purpose.</p>
 </blockquote>
 <h1 id="where-the-encryption-actually-lives">Where the encryption actually lives</h1>
-<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">sequenceDiagram
+<pre class="mermaid">
+  sequenceDiagram
     participant P as Payments
     participant Z1 as Source ztunnel
     participant N as Network
@@ -900,7 +910,7 @@ cni.exclusive = false
     N-&gt;&gt;Z2: Encrypted traffic
     Z2-&gt;&gt;Z2: Authenticate &#x2F; decrypt
     Z2-&gt;&gt;C: Application traffic
-</code></pre>
+</pre>
 <p>We tend to draw it as "ztunnel to ztunnel," but the HBONE tunnel is really an encrypted channel between <strong>source and destination workloads</strong> — ztunnel is the machinery, not the trust endpoint. Even same-node traffic traverses Ambient, so L4 policy and telemetry stay consistent regardless of scheduling.</p>
 <h1 id="the-control-plane-briefly">The control plane, briefly</h1>
 <pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">                    istiod
@@ -1042,7 +1052,16 @@ L7
 
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: true });
+  const isDark = document.body.classList.contains('dark');
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: isDark ? 'dark' : 'default',
+    themeVariables: {
+      primaryTextColor: isDark ? '#e5e7eb' : '#1f2937',
+      lineColor: isDark ? '#9ca3af' : '#4b5563',
+      tertiaryColor: isDark ? '#111827' : '#f3f4f6'
+    }
+  });
 </script>
 
 

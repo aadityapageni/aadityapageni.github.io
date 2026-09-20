@@ -1230,7 +1230,16 @@ curl http:&#x2F;&#x2F;&lt;floating-ip&gt;
 
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: true });
+  const isDark = document.body.classList.contains('dark');
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: isDark ? 'dark' : 'default',
+    themeVariables: {
+      primaryTextColor: isDark ? '#e5e7eb' : '#1f2937',
+      lineColor: isDark ? '#9ca3af' : '#4b5563',
+      tertiaryColor: isDark ? '#111827' : '#f3f4f6'
+    }
+  });
 </script>
 
 
