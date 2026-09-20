@@ -3,7 +3,6 @@ title = "Who Owns the Traffic? Cilium, Istio, and the Line Between Them"
 date = 2026-09-20
 [taxonomies]
 tags = ["cilium","istio","cni"]
-
 [extra]
 mermaid = true
 +++
@@ -376,7 +375,7 @@ No Envoy sidecar inside the app Pod. Traffic enters the node-level Ambient plane
 
 **ztunnel = the L4 layer.** One per node, serving every workload on it. Handles identity, mTLS, L4 authorization, L4 telemetry, secure transport. istiod supplies its config and certs.
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["payments Pod"]
     C["Cilium eBPF"]
@@ -390,7 +389,7 @@ flowchart LR
     Z1 --> H
     H --> Z2
     Z2 --> D
-```
+{% end %}
 
 ### Where mTLS actually kicks in
 
@@ -426,7 +425,7 @@ secure transport
 
 Then the path can remain:
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["payments"]
     Z1["ztunnel"]
@@ -438,7 +437,7 @@ flowchart LR
     Z1 -->|"mTLS / HBONE"| N
     N --> Z2
     Z2 --> B
-```
+{% end %}
 
 There is no reason to introduce an L7 proxy just because the workload needs mTLS.
 
@@ -461,7 +460,7 @@ traffic management
 
 The path changes:
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["payments Pod"]
     Z1["source ztunnel"]
@@ -473,7 +472,7 @@ flowchart LR
     Z1 -->|"HBONE"| W
     W -->|"L7 processing"| Z2
     Z2 --> B
-```
+{% end %}
 
 The waypoint becomes the L7 decision point.
 
@@ -539,7 +538,7 @@ Those labels are technically correct but hide what actually happens to the traff
 
 Start without the mesh.
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["payments Pod"]
     C1["Cilium eBPF"]
@@ -551,7 +550,7 @@ flowchart LR
     C1 --> N
     N --> C2
     C2 --> B
-```
+{% end %}
 
 Cilium handles the networking.
 
@@ -567,7 +566,7 @@ This is the baseline.
 
 Now put both workloads into Ambient.
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["payments Pod"]
     C1["Cilium"]
@@ -583,7 +582,7 @@ flowchart LR
     H --> Z2
     Z2 --> C2
     C2 --> B
-```
+{% end %}
 
 Now the application gets:
 
@@ -601,7 +600,7 @@ without putting an Envoy sidecar inside the application Pod.
 
 Now introduce the waypoint.
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["payments Pod"]
     C["Cilium"]
@@ -616,7 +615,7 @@ flowchart LR
     W -->|"HTTP / L7 policy"| Z2
     Z2 --> C
     C --> B
-```
+{% end %}
 
 Now the traffic can be controlled at two levels:
 
@@ -645,7 +644,7 @@ DENY
 
 The decision happens before the request has any reason to reach the application.
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["payments"]
     C["Cilium eBPF"]
@@ -653,7 +652,7 @@ flowchart LR
 
     A --> C
     C -->|"DENY"| X
-```
+{% end %}
 
 Istio does not replace that network boundary.
 
@@ -678,7 +677,7 @@ GET /admin
 
 and the waypoint's authorization policy does not permit it.
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["payments"]
     C["Cilium<br/>L3/L4 ALLOW"]
@@ -690,7 +689,7 @@ flowchart LR
     C --> Z
     Z --> W
     W --> X
-```
+{% end %}
 
 This is the layered security model:
 
@@ -726,7 +725,7 @@ I need to inspect the HTTP request
 
 Now there is a fundamental conflict.
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["Application"]
     Z["Istio ztunnel"]
@@ -738,7 +737,7 @@ flowchart LR
     E --> C
 
     C -.->|"Cannot inspect original HTTP"| X["L7 ownership conflict"]
-```
+{% end %}
 
 This isn't a theoretical concern.
 
@@ -778,7 +777,7 @@ Either works. Mixing them is where it breaks.
 
 Apps call `catalog.default.svc.cluster.local`, not a Pod IP. With kube-proxy replacement, that LB runs in Cilium's eBPF datapath:
 
-```mermaid
+{% mermaid() %}
 flowchart LR
     A["payments"]
     S["catalog Service"]
@@ -792,7 +791,7 @@ flowchart LR
     C --> B1
     C --> B2
     C --> B3
-```
+{% end %}
 
 Kubernetes Service LB (network layer) is a different thing from Istio's application-aware traffic management (waypoint can do HTTPRoute-driven L7 LB too). Question isn't "which supports LB" — both do. It's **which layer should make the decision.**
 
@@ -814,7 +813,7 @@ Stops Cilium's socket LB from stepping on Istio's proxying, lets it coexist with
 
 # Where the encryption actually lives
 
-```mermaid
+{% mermaid() %}
 sequenceDiagram
     participant P as Payments
     participant Z1 as Source ztunnel
@@ -829,7 +828,7 @@ sequenceDiagram
     N->>Z2: Encrypted traffic
     Z2->>Z2: Authenticate / decrypt
     Z2->>C: Application traffic
-```
+{% end %}
 
 We tend to draw it as "ztunnel to ztunnel," but the HBONE tunnel is really an encrypted channel between **source and destination workloads** — ztunnel is the machinery, not the trust endpoint. Even same-node traffic traverses Ambient, so L4 policy and telemetry stay consistent regardless of scheduling.
 
