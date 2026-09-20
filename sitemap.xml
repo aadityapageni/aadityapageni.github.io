@@ -32,6 +32,10 @@
         <lastmod>2026-05-08</lastmod>
     </url>
     <url>
+        <loc>https://www.aadityapageni.com.np/posts/istio-cilium-coherence/</loc>
+        <lastmod>2026-09-20</lastmod>
+    </url>
+    <url>
         <loc>https://www.aadityapageni.com.np/posts/octavia-kolla-ansible/</loc>
         <lastmod>2026-07-22</lastmod>
     </url>
@@ -44,6 +48,15 @@
     </url>
     <url>
         <loc>https://www.aadityapageni.com.np/tags/ceph/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/cilium/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/cni/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/istio/</loc>
     </url>
     <url>
         <loc>https://www.aadityapageni.com.np/tags/masakari/</loc>

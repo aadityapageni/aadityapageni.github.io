@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="~">
+
+  <title>Who Owns the Traffic? Cilium, Istio, and the Line Between Them</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.aadityapageni.com.np/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.aadityapageni.com.np/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.aadityapageni.com.np/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://www.aadityapageni.com.np/main.css">
+  
+
+<link id="hl" rel="stylesheet" type="text/css" href="/hl-light.css" />
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/giallo-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#cilium-starts-with-the-network">Cilium starts with the network</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#then-there-s-istio">Then there&#x27;s Istio</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#why-a-service-mesh-at-all">Why a service mesh at all?</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#but-doesn-t-cilium-already-have-a-service-mesh">But doesn&#x27;t Cilium already have a service mesh?</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#so-why-istio-for-the-mesh-layer">So why Istio for the mesh layer?</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#istio-s-cni">Istio&#x27;s CNI</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#following-an-actual-request">Following an actual request</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#where-mtls-actually-kicks-in">Where mTLS actually kicks in</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#what-happens-when-there-is-no-waypoint">What happens when there is no waypoint?</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#what-changes-when-a-waypoint-exists">What changes when a waypoint exists?</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#this-creates-a-very-useful-division-of-labor">This creates a very useful division of labor</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#the-first-important-traffic-example-cilium-only">The first important traffic example: Cilium only</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#the-second-traffic-example-ambient-l4">The second traffic example: Ambient L4</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#the-third-traffic-example-ambient-l7">The third traffic example: Ambient + L7</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#the-fourth-traffic-example-cilium-denies-the-connection">The fourth traffic example: Cilium denies the connection</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#the-fifth-traffic-example-cilium-allows-istio-denies">The fifth traffic example: Cilium allows, Istio denies</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#the-sixth-traffic-example-where-things-go-wrong">The sixth traffic example: where things go wrong</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#two-clean-designs">Two clean designs</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#don-t-forget-the-service-itself">Don&#x27;t forget the Service itself</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-detail-that-actually-bites-people">The detail that actually bites people</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#where-the-encryption-actually-lives">Where the encryption actually lives</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-control-plane-briefly">The control plane, briefly</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-full-picture">The full picture</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#why-bother">Why bother</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-real-reason-to-combine-them">The real reason to combine them</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#one-rule-to-keep">One rule to keep</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#closing-thought">Closing thought</a>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>Who Owns the Traffic? Cilium, Istio, and the Line Between Them</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Sep 20, 2026</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://www.aadityapageni.com.np/tags/cilium"><span>#</span>cilium</a><a class="instant" href="https://www.aadityapageni.com.np/tags/istio"><span>#</span>istio</a><a class="instant" href="https://www.aadityapageni.com.np/tags/cni"><span>#</span>cni</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <p>There's a point in every Kubernetes journey where "networking" stops meaning "get packets from Pod A to Pod B."</p>
+<p>The applications start multiplying.</p>
+<p>A simple Kubernetes cluster becomes a collection of services:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">frontend
+   |
+   +----&gt; api
+   |        |
+   |        +----&gt; payments
+   |        |
+   |        +----&gt; catalog
+   |
+   +----&gt; authentication
+</code></pre>
+<p>And the questions change:</p>
+<ul>
+<li>Who is actually calling <code>api</code>?</li>
+<li>Is that connection encrypted?</li>
+<li>Can this workload hit <code>/admin</code>?</li>
+<li>Should this request retry?</li>
+<li>Should an unhealthy backend get pulled?</li>
+<li>Which version should this request land on?</li>
+<li>Can I see network flow and application request separately?</li>
+</ul>
+<p>This is where Kubernetes networking and service mesh start to overlap. And it gets genuinely interesting when the network is <strong>Cilium</strong> and the mesh is <strong>Istio Ambient</strong>.</p>
+<p>On paper, running both sounds redundant — Cilium already does networking, LB, policy, observability, encryption, even service-mesh features. Istio already does identity, mTLS, authorization, traffic management, observability.</p>
+<p>So why both? Not because either has more features. Because:</p>
+<blockquote>
+<p><strong>They can operate at different layers of the traffic path.</strong></p>
+</blockquote>
+<p>Cilium owns the Kubernetes network and the L3/L4 datapath. Istio Ambient owns service identity, mesh security, and application-level behavior. Once that clicks, the architecture stops being mysterious.</p>
+<h3 id="cilium-starts-with-the-network">Cilium starts with the network</h3>
+<p>Cilium is fundamentally a networking and security platform built on eBPF. When a Pod comes up, Cilium is what makes it part of the network:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">                 Kubernetes
+                     |
+                     v
+                Cilium CNI
+                     |
+          +----------+----------+
+          |                     |
+       Pod network          eBPF datapath
+          |                     |
+          |                L3&#x2F;L4 processing
+          |                Service LB
+          |                NetworkPolicy
+          |                Observability
+          |
+          v
+       Pod
+</code></pre>
+<p>Big architectural difference from a traditional mesh: Cilium doesn't start with an application proxy. It starts in the kernel. eBPF gives it visibility and control without a sidecar next to every app, and it can still reach up into L7 when needed.</p>
+<p>Which means this is a perfectly valid architecture on its own:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Application
+     |
+     v
+Cilium
+     |
+     +-- networking
+     +-- Service load balancing
+     +-- L3&#x2F;L4 policy
+     +-- observability
+     |
+     v
+Application
+</code></pre>
+<p>For a lot of environments, that's enough. But distributed systems eventually create requirements that aren't networking problems anymore.</p>
+<h3 id="then-there-s-istio">Then there's Istio</h3>
+<p>A mesh exists so application teams don't each reinvent:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">TLS
+authentication
+service identity
+authorization
+timeouts
+retries
+traffic shifting
+circuit breaking
+request telemetry
+</code></pre>
+<p>Istio has traditionally done this with an Envoy sidecar next to every workload. Ambient throws that model out.</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">                 Istio Ambient
+
+              +----------------+
+              |    Waypoint    |
+              |      L7        |
+              +-------+--------+
+                      |
+              +-------v--------+
+              |    ztunnel     |
+              |      L4        |
+              |    mTLS        |
+              +-------+--------+
+                      |
+                Kubernetes
+                  network
+</code></pre>
+<p><strong>ztunnel</strong> = the L4 layer, one per node. <strong>waypoint</strong> = optional L7 layer, added only when needed.</p>
+<p>Instead of <code>1 Pod = 1 Envoy</code>, common L4 work moves to a shared, node-local proxy:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Many Pods
+    |
+    v
+ node-local ztunnel
+</code></pre>
+<p>L7 becomes an explicit, opt-in layer — not a default tax.</p>
+<h3 id="why-a-service-mesh-at-all">Why a service mesh at all?</h3>
+<p>Cilium answers: <strong>can these two workloads talk over the network?</strong></p>
+<p>A mesh answers something sharper: <strong>should this authenticated workload make this specific request?</strong></p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">payments  ---&gt;  catalog
+</code></pre>
+<p>At the network layer: <code>ALLOW payments → catalog TCP/8080</code>. Fine. But catalog exposes:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">GET  &#x2F;products
+GET  &#x2F;admin
+POST &#x2F;checkout
+DELETE &#x2F;inventory
+</code></pre>
+<p>What you actually want:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">payments → GET &#x2F;products      ALLOW
+payments → GET &#x2F;admin        DENY
+payments → POST &#x2F;checkout    ALLOW
+</code></pre>
+<p>The question shifts from "can payments connect to catalog" to "what is payments allowed to <em>do</em> once it's there." The unit of decision changes:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">IP + port
+</code></pre>
+<p>becomes:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">workload identity + service + request
+</code></pre>
+<p>Everything below builds on that shift.</p>
+<h3 id="but-doesn-t-cilium-already-have-a-service-mesh">But doesn't Cilium already have a service mesh?</h3>
+<p>Yes — and this is where the conversation gets oversimplified. Cilium genuinely does L7-aware traffic handling, mesh-style traffic management, security, observability, identity.</p>
+<p>So it's <strong>not</strong> "Cilium can't do mesh." It's:</p>
+<blockquote>
+<p><strong>What kind of service-mesh architecture do we want — and which functionality do we want Cilium to own vs. Istio?</strong></p>
+</blockquote>
+<p>Both can run sidecar-free. Both can use Envoy for L7. Both do identity-based security and encryption. But they start from opposite ends.</p>
+<p>Cilium's path:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">eBPF
+  |
+  v
+networking
+  |
+  v
+L3&#x2F;L4
+  |
+  v
+L7 where needed
+</code></pre>
+<p>Istio's path:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">service identity
+      |
+      v
+secure service communication
+      |
+      v
+L4 mesh
+      |
+      v
+L7 service behavior
+</code></pre>
+<p>Not two implementations of the same thing — two different ways of building the infrastructure around service communication.</p>
+<h3 id="so-why-istio-for-the-mesh-layer">So why Istio for the mesh layer?</h3>
+<p>Not because Cilium's networking is weak. This is about the maturity of specific <em>mesh</em> features.</p>
+<p>Cilium's own <a rel="nofollow noreferrer" href="https://docs.cilium.io/en/latest/network/servicemesh/mutual-authentication/mutual-authentication/">docs</a> mark <strong>Mutual Authentication as Beta</strong>, call it incomplete, and list open roadmap items. More telling — the upgrade docs say it's actually <strong>deprecated</strong>, with users pointed to Ztunnel Transparent Encryption instead.</p>
+<p>Doesn't mean Cilium is unfit for production. It means:</p>
+<blockquote>
+<p>I'm not building an architecture's security model on a feature whose lifecycle is still moving.</p>
+</blockquote>
+<p>There's also a gap between Cilium's native L7 policy and its deeper Envoy customization — the advanced stuff runs through <code>CiliumEnvoyConfig</code> / <code>CiliumClusterwideEnvoyConfig</code>, which Cilium's own docs describe as implementation details with <strong>minimal validation and no defined conflict resolution</strong>. Workable, but now you're operating Envoy internals instead of declaring "allow this identity to call this service."</p>
+<p>Istio's abstraction:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Service identity
+        |
+        v
+AuthorizationPolicy
+        |
+        v
+Waypoint
+        |
+        +-- HTTP routing
+        +-- authorization
+        +-- retries
+        +-- timeouts
+        +-- traffic management
+</code></pre>
+<p>That's the actual reason for the split: Cilium = network, Istio Ambient = mesh. Not because Cilium can't — because the separation is cleaner.</p>
+<h3 id="istio-s-cni">Istio's CNI</h3>
+<p>If Cilium is already the CNI, how does Istio have one too?</p>
+<p><strong>Istio CNI isn't replacing Cilium.</strong></p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">                 Pod creation
+                     |
+             +-------+-------+
+             |               |
+             v               v
+       Cilium CNI       Istio CNI
+             |               |
+     &quot;give Pod network&quot;  &quot;connect Pod
+             |            to Ambient&quot;
+             |               |
+             +-------+-------+
+                     |
+                     v
+                    Pod
+</code></pre>
+<p>Istio CNI is documented as a <strong>chained plugin</strong> — layered on the primary CNI, not competing with it. Required in Ambient mode.</p>
+<p>Not this:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Cilium CNI
+       VS
+Istio CNI
+</code></pre>
+<p>This:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Cilium CNI
+    +
+Istio CNI
+</code></pre>
+<p>Mental model: <strong>Cilium connects the Pod to Kubernetes. Istio CNI connects the Pod's traffic to the mesh.</strong></p>
+<h3 id="following-an-actual-request">Following an actual request</h3>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">payments application
+        |
+        v
+   network traffic
+        |
+        v
+   Cilium datapath
+        |
+        v
+   Ambient interception
+        |
+        v
+      ztunnel
+        |
+        v
+   encrypted traffic
+        |
+        v
+ destination ztunnel
+        |
+        v
+ catalog application
+</code></pre>
+<p>The application has no idea any of this exists.</p>
+<p>Cilium doesn't leave the picture — it still owns networking and the eBPF datapath, still enforces L3/L4 policy:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">                  Traffic
+                     |
+                     v
+             +---------------+
+             |    Cilium     |
+             | Network       |
+             | L3&#x2F;L4         |
+             | Service LB    |
+             | NetworkPolicy |
+             +-------+-------+
+                     |
+                     v
+             +---------------+
+             |    Istio      |
+             | identity      |
+             | mTLS          |
+             | mesh          |
+             +-------+-------+
+                     |
+                     v
+             +---------------+
+             |   Waypoint    |
+             |   optional    |
+             | L7            |
+             +---------------+
+</code></pre>
+<p><strong>Istio CNI's job</strong> happens before ztunnel: interception. A node-local DaemonSet configures the Pod so mesh traffic gets redirected into Ambient:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">                  Application Pod
+                         |
+                    normal traffic
+                         |
+                         v
+                   Istio CNI
+                         |
+                 redirection
+                         |
+                         v
+                     ztunnel
+</code></pre>
+<p>No Envoy sidecar inside the app Pod. Traffic enters the node-level Ambient plane instead. That's Ambient's defining trait.</p>
+<p><strong>ztunnel = the L4 layer.</strong> One per node, serving every workload on it. Handles identity, mTLS, L4 authorization, L4 telemetry, secure transport. istiod supplies its config and certs.</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;payments Pod&quot;]
+    C[&quot;Cilium eBPF&quot;]
+    Z1[&quot;source ztunnel&quot;]
+    H[&quot;HBONE + mTLS&quot;]
+    Z2[&quot;destination ztunnel&quot;]
+    D[&quot;catalog Pod&quot;]
+
+    A --&gt; C
+    C --&gt; Z1
+    Z1 --&gt; H
+    H --&gt; Z2
+    Z2 --&gt; D
+</code></pre>
+<h3 id="where-mtls-actually-kicks-in">Where mTLS actually kicks in</h3>
+<p>App sends <code>GET /products</code>, thinks it's just HTTP. Once Ambient has it, the hop is secured via mTLS over HBONE (HTTP/2 + HTTP CONNECT + mTLS). All inbound/outbound L4 TCP traffic in the mesh is secured this way, backed by workload X.509 identities.</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Application request
+
+GET &#x2F;products
+      |
+      v
+   ztunnel
+      |
+      v
+  mTLS &#x2F; HBONE
+      |
+      v
+   network
+</code></pre>
+<p>The boundary that matters: <strong>Cilium sees the flow. It cannot read what's inside the encrypted mesh connection.</strong></p>
+<h1 id="what-happens-when-there-is-no-waypoint">What happens when there is no waypoint?</h1>
+<p>Suppose the application only requires:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">mTLS
+workload identity
+L4 authorization
+secure transport
+</code></pre>
+<p>Then the path can remain:</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;payments&quot;]
+    Z1[&quot;ztunnel&quot;]
+    N[&quot;Cluster Network&quot;]
+    Z2[&quot;ztunnel&quot;]
+    B[&quot;catalog&quot;]
+
+    A --&gt; Z1
+    Z1 --&gt;|&quot;mTLS &#x2F; HBONE&quot;| N
+    N --&gt; Z2
+    Z2 --&gt; B
+</code></pre>
+<p>There is no reason to introduce an L7 proxy just because the workload needs mTLS.</p>
+<p>This is one of the most compelling ideas in Ambient:</p>
+<blockquote>
+<p><strong>Use an L4 proxy for L4 requirements. Add L7 infrastructure only where L7 is actually needed.</strong></p>
+</blockquote>
+<p>Istio explicitly describes this as a progressive model, from no mesh, to secure L4 overlay, to full L7 processing.</p>
+<h1 id="what-changes-when-a-waypoint-exists">What changes when a waypoint exists?</h1>
+<p>Now suppose the application needs:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">HTTP authorization
+HTTP routing
+request-level telemetry
+traffic management
+</code></pre>
+<p>The path changes:</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;payments Pod&quot;]
+    Z1[&quot;source ztunnel&quot;]
+    W[&quot;Istio Waypoint&lt;br&#x2F;&gt;Envoy&quot;]
+    Z2[&quot;destination ztunnel&quot;]
+    B[&quot;catalog Pod&quot;]
+
+    A --&gt; Z1
+    Z1 --&gt;|&quot;HBONE&quot;| W
+    W --&gt;|&quot;L7 processing&quot;| Z2
+    Z2 --&gt; B
+</code></pre>
+<p>The waypoint becomes the L7 decision point.</p>
+<p>It can evaluate things like:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">HTTP method
+HTTP path
+headers
+request identity
+destination service
+routing rules
+authorization policy
+</code></pre>
+<p>Istio's current Ambient data-plane documentation describes the waypoint as the place where L7 policies such as <code>AuthorizationPolicy</code>, request authentication, telemetry, and L7 routing are applied.</p>
+<p>So the architecture becomes:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Cilium
+  |
+  | network
+  v
+ztunnel
+  |
+  | secure L4
+  v
+waypoint
+  |
+  | application-aware
+  v
+destination
+</code></pre>
+<h1 id="this-creates-a-very-useful-division-of-labor">This creates a very useful division of labor</h1>
+<p>We can now assign ownership.</p>
+<table><thead><tr><th>Concern</th><th>Component</th></tr></thead><tbody>
+<tr><td>Pod networking</td><td>Cilium CNI</td></tr>
+<tr><td>eBPF datapath</td><td>Cilium</td></tr>
+<tr><td>Kubernetes Service load balancing</td><td>Cilium</td></tr>
+<tr><td>Network policy</td><td>Cilium</td></tr>
+<tr><td>Network observability</td><td>Cilium / Hubble</td></tr>
+<tr><td>Ambient traffic interception</td><td>Istio CNI</td></tr>
+<tr><td>L4 mesh</td><td>ztunnel</td></tr>
+<tr><td>Workload mTLS</td><td>ztunnel</td></tr>
+<tr><td>Workload identity</td><td>Istio</td></tr>
+<tr><td>L4 mesh authorization</td><td>ztunnel</td></tr>
+<tr><td>L7 authorization</td><td>waypoint</td></tr>
+<tr><td>HTTP routing</td><td>waypoint</td></tr>
+<tr><td>L7 traffic management</td><td>waypoint</td></tr>
+</tbody></table>
+<p>This is a much better way to understand the stack than simply saying:</p>
+<blockquote>
+<p>"Cilium is the CNI and Istio is the service mesh."</p>
+</blockquote>
+<p>Those labels are technically correct but hide what actually happens to the traffic.</p>
+<h2 id="the-first-important-traffic-example-cilium-only">The first important traffic example: Cilium only</h2>
+<p>Start without the mesh.</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;payments Pod&quot;]
+    C1[&quot;Cilium eBPF&quot;]
+    N[&quot;Network&quot;]
+    C2[&quot;Cilium eBPF&quot;]
+    B[&quot;catalog Pod&quot;]
+
+    A --&gt; C1
+    C1 --&gt; N
+    N --&gt; C2
+    C2 --&gt; B
+</code></pre>
+<p>Cilium handles the networking.</p>
+<p>There is no ztunnel.</p>
+<p>There is no waypoint.</p>
+<p>There is no service-mesh encryption.</p>
+<p>This is the baseline.</p>
+<h2 id="the-second-traffic-example-ambient-l4">The second traffic example: Ambient L4</h2>
+<p>Now put both workloads into Ambient.</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;payments Pod&quot;]
+    C1[&quot;Cilium&quot;]
+    Z1[&quot;ztunnel&quot;]
+    H[&quot;HBONE + mTLS&quot;]
+    Z2[&quot;ztunnel&quot;]
+    C2[&quot;Cilium&quot;]
+    B[&quot;catalog Pod&quot;]
+
+    A --&gt; C1
+    C1 --&gt; Z1
+    Z1 --&gt; H
+    H --&gt; Z2
+    Z2 --&gt; C2
+    C2 --&gt; B
+</code></pre>
+<p>Now the application gets:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">workload identity
++
+mTLS
++
+L4 mesh policy
+</code></pre>
+<p>without putting an Envoy sidecar inside the application Pod.</p>
+<h2 id="the-third-traffic-example-ambient-l7">The third traffic example: Ambient + L7</h2>
+<p>Now introduce the waypoint.</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;payments Pod&quot;]
+    C[&quot;Cilium&quot;]
+    Z1[&quot;ztunnel&quot;]
+    W[&quot;Waypoint&quot;]
+    Z2[&quot;ztunnel&quot;]
+    B[&quot;catalog Pod&quot;]
+
+    A --&gt; C
+    C --&gt; Z1
+    Z1 --&gt;|&quot;HBONE&quot;| W
+    W --&gt;|&quot;HTTP &#x2F; L7 policy&quot;| Z2
+    Z2 --&gt; C
+    C --&gt; B
+</code></pre>
+<p>Now the traffic can be controlled at two levels:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Cilium
+    |
+    | L3&#x2F;L4
+    v
+Istio
+    |
+    | L7
+    v
+Application
+</code></pre>
+<p>This is where the combination becomes interesting.</p>
+<h2 id="the-fourth-traffic-example-cilium-denies-the-connection">The fourth traffic example: Cilium denies the connection</h2>
+<p>Imagine the network policy says:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">payments → database
+DENY
+</code></pre>
+<p>The decision happens before the request has any reason to reach the application.</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;payments&quot;]
+    C[&quot;Cilium eBPF&quot;]
+    X[&quot;DROP&quot;]
+
+    A --&gt; C
+    C --&gt;|&quot;DENY&quot;| X
+</code></pre>
+<p>Istio does not replace that network boundary.</p>
+<p>Cilium remains the layer that protects the network.</p>
+<h2 id="the-fifth-traffic-example-cilium-allows-istio-denies">The fifth traffic example: Cilium allows, Istio denies</h2>
+<p>Now imagine:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">payments → catalog
+TCP&#x2F;8080
+</code></pre>
+<p>is allowed by Cilium.</p>
+<p>But the HTTP request is:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">GET &#x2F;admin
+</code></pre>
+<p>and the waypoint's authorization policy does not permit it.</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;payments&quot;]
+    C[&quot;Cilium&lt;br&#x2F;&gt;L3&#x2F;L4 ALLOW&quot;]
+    Z[&quot;ztunnel&quot;]
+    W[&quot;Waypoint&quot;]
+    X[&quot;L7 DENY&quot;]
+
+    A --&gt; C
+    C --&gt; Z
+    Z --&gt; W
+    W --&gt; X
+</code></pre>
+<p>This is the layered security model:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Cilium:
+    Can the connection exist?
+
+Istio:
+    What is this workload allowed to do?
+</code></pre>
+<h2 id="the-sixth-traffic-example-where-things-go-wrong">The sixth traffic example: where things go wrong</h2>
+<p>Now ask Cilium to perform L7 HTTP enforcement on the same traffic that Istio Ambient is protecting.</p>
+<p>The application sends:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">GET &#x2F;products
+</code></pre>
+<p>Istio's side of the architecture says:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">encrypt the service-to-service traffic
+</code></pre>
+<p>Cilium's L7 layer says:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">I need to inspect the HTTP request
+</code></pre>
+<p>Now there is a fundamental conflict.</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;Application&quot;]
+    Z[&quot;Istio ztunnel&quot;]
+    E[&quot;mTLS &#x2F; HBONE&quot;]
+    C[&quot;Cilium L7&quot;]
+
+    A --&gt; Z
+    Z --&gt; E
+    E --&gt; C
+
+    C -.-&gt;|&quot;Cannot inspect original HTTP&quot;| X[&quot;L7 ownership conflict&quot;]
+</code></pre>
+<p>This isn't a theoretical concern.</p>
+<p>Cilium's own Istio integration documentation demonstrates the interaction between Ambient mTLS and Cilium L7 policy and warns about the resulting conflict when Cilium's HTTP proxy is used on Ambient-managed traffic.</p>
+<p>The lesson is not:</p>
+<blockquote>
+<p>"Cilium L7 is bad."</p>
+</blockquote>
+<p>And it is not:</p>
+<blockquote>
+<p>"Istio L7 is better."</p>
+</blockquote>
+<p>The lesson is:</p>
+<blockquote>
+<p><strong>Don't give two independent proxy systems ownership of the same encrypted L7 traffic path.</strong></p>
+</blockquote>
+<p>Pick an owner.</p>
+<h1 id="two-clean-designs">Two clean designs</h1>
+<p><strong>Cilium owns L7:</strong></p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Application → Cilium → Cilium L7&#x2F;Envoy → Network
+</code></pre>
+<p><strong>Istio owns L7:</strong></p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Application → Cilium → ztunnel → Waypoint → Destination
+</code></pre>
+<p>Either works. Mixing them is where it breaks.</p>
+<h1 id="don-t-forget-the-service-itself">Don't forget the Service itself</h1>
+<p>Apps call <code>catalog.default.svc.cluster.local</code>, not a Pod IP. With kube-proxy replacement, that LB runs in Cilium's eBPF datapath:</p>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[&quot;payments&quot;]
+    S[&quot;catalog Service&quot;]
+    C[&quot;Cilium eBPF Service LB&quot;]
+    B1[&quot;catalog-1&quot;]
+    B2[&quot;catalog-2&quot;]
+    B3[&quot;catalog-3&quot;]
+
+    A --&gt; S
+    S --&gt; C
+    C --&gt; B1
+    C --&gt; B2
+    C --&gt; B3
+</code></pre>
+<p>Kubernetes Service LB (network layer) is a different thing from Istio's application-aware traffic management (waypoint can do HTTPRoute-driven L7 LB too). Question isn't "which supports LB" — both do. It's <strong>which layer should make the decision.</strong></p>
+<h1 id="the-detail-that-actually-bites-people">The detail that actually bites people</h1>
+<p>Cilium's kube-proxy replacement is architecturally nice — one less component. But its socket-level LB can collide with Istio's interception.</p>
+<p>Cilium's Istio integration docs recommend:</p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">kubeProxyReplacement = true
+socketLB.hostNamespaceOnly = true
+cni.exclusive = false
+</code></pre>
+<p>Stops Cilium's socket LB from stepping on Istio's proxying, lets it coexist with another CNI in the chain.</p>
+<blockquote>
+<p>Even when Cilium and Istio own different layers, their implementations still meet at the traffic-interception boundary. That boundary has to be designed on purpose.</p>
+</blockquote>
+<h1 id="where-the-encryption-actually-lives">Where the encryption actually lives</h1>
+<pre data-lang="mermaid" class="language-mermaid "><code class="language-mermaid" data-lang="mermaid">sequenceDiagram
+    participant P as Payments
+    participant Z1 as Source ztunnel
+    participant N as Network
+    participant Z2 as Destination ztunnel
+    participant C as Catalog
+
+    P-&gt;&gt;Z1: Application traffic
+    Z1-&gt;&gt;Z1: Workload identity
+    Z1-&gt;&gt;Z1: mTLS &#x2F; HBONE
+    Z1-&gt;&gt;N: Encrypted traffic
+    N-&gt;&gt;Z2: Encrypted traffic
+    Z2-&gt;&gt;Z2: Authenticate &#x2F; decrypt
+    Z2-&gt;&gt;C: Application traffic
+</code></pre>
+<p>We tend to draw it as "ztunnel to ztunnel," but the HBONE tunnel is really an encrypted channel between <strong>source and destination workloads</strong> — ztunnel is the machinery, not the trust endpoint. Even same-node traffic traverses Ambient, so L4 policy and telemetry stay consistent regardless of scheduling.</p>
+<h1 id="the-control-plane-briefly">The control plane, briefly</h1>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">                    istiod
+                     |
+          +----------+----------+
+          |                     |
+          v                     v
+      ztunnel A             ztunnel B
+          |                     |
+       workloads             workloads
+</code></pre>
+<p>istiod talks to every ztunnel over xDS, hands out config and certs. No more per-Pod Envoy config to manage — common L4 lives in shared node-level ztunnels, L7 complexity is opt-in via waypoints. That's Ambient's whole idea, compressed.</p>
+<h1 id="the-full-picture">The full picture</h1>
+<p><img src="/img/posts/excalidraw_cilium_istio.png" alt="single node data flow" />
+Single Node data Flow</p>
+<p><img src="/img/posts/multi_node_data_flow.png" alt="multi node data flow" />
+Multi Node Data flow <em>(image made with AI)</em></p>
+<p>Cilium isn't "the mesh." Istio isn't "the CNI." Istio CNI isn't competing with Cilium CNI. ztunnel isn't replacing the eBPF datapath. The waypoint isn't mandatory. Cilium's L7 and Istio's L7 should never fight over the same traffic.</p>
+<h1 id="why-bother">Why bother</h1>
+<p>Because distributed systems are messy, and the alternative is pushing TLS, certs, identity, retries, timeouts, authorization, routing, telemetry, and failure handling into every application team — implemented slightly differently every time.</p>
+<p>A mesh standardizes that. But it's not free — now you have control planes, proxies, certs, interception, policies, routes, and a new debugging layer.</p>
+<p>So the real question was never "can I run Cilium and Istio together." Obviously yes.</p>
+<blockquote>
+<p><strong>What complexity am I buying, and what complexity am I removing?</strong></p>
+</blockquote>
+<p>Cilium: eBPF, networking, Service LB, L3/L4 policy, observability. Istio Ambient adds: identity, mTLS, L4 mesh, L7 authorization, traffic management — adopted incrementally. Need encrypted service-to-service? ztunnel. Need app-aware policy? Add a waypoint.</p>
+<h1 id="the-real-reason-to-combine-them">The real reason to combine them</h1>
+<p>Not feature count. <strong>Separation of concerns.</strong></p>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">                         Application
+                              |
+                              v
+                     +----------------+
+                     |    Waypoint    |
+                     |      L7        |
+                     | authorization  |
+                     | routing        |
+                     | resiliency     |
+                     +-------+--------+
+                             |
+                             v
+                     +---------------+
+                     |    ztunnel    |
+                     |      L4       |
+                     |     mTLS      |
+                     |    identity   |
+                     +-------+-------+
+                             |
+                             v
+                     +---------------+
+                     |    Cilium     |
+                     | eBPF          |
+                     | Networking    |
+                     | Service LB    |
+                     | L3&#x2F;L4 policy  |
+                     | Hubble        |
+                     +-------+-------+
+                             |
+                             v
+                      Kubernetes
+                       network
+</code></pre>
+<ul>
+<li><strong>Cilium</strong> → can this traffic exist on the network?</li>
+<li><strong>ztunnel</strong> → who is this workload, is the connection authenticated and encrypted?</li>
+<li><strong>waypoint</strong> → what is this workload allowed to do at the application level?</li>
+</ul>
+<h1 id="one-rule-to-keep">One rule to keep</h1>
+<blockquote>
+<p><strong>Don't let two systems own the same traffic layer accidentally.</strong></p>
+</blockquote>
+<pre data-lang="text" class="language-text "><code class="language-text" data-lang="text">Cilium
+  ↓
+network
+
+Istio Ambient
+  ↓
+service mesh
+
+Waypoint
+  ↓
+L7
+</code></pre>
+<p>Problems start when it becomes Cilium L7 + Istio L7 + Istio mTLS all making independent calls on the same request. Fix isn't necessarily removing one — it's defining ownership and sticking to it.</p>
+<h1 id="closing-thought">Closing thought</h1>
+<p>Both projects are converging on the same destination from opposite directions. Cilium started in eBPF networking and climbed up into application-aware security. Istio started with sidecars and is moving down into node-level L4 infra via Ambient. Cilium is even experimenting with its own ztunnel-style transparent encryption (still Beta) — another sign these two worlds are getting closer.</p>
+<p>So the interesting question is no longer <strong>Cilium or Istio.</strong></p>
+<p>It's: <strong>at which layer should each system stop, and where should the next one take over?</strong></p>
+<p>Get that answer right, and the architecture stops being mysterious — and gets a lot easier to run.</p>
+<p>And yeah, if you wanna do it yourself and check some other findings, check the github <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/istio-cilium-coherence.git">repo</a></p>
+
+      </article>
+
+      
+      
+      <div class="reaction right" data-endpoint="https:&#x2F;&#x2F;wwwaadityapageni.com.np&#x2F;api&#x2F;reaction"></div>
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2026 Aaditya Pageni
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+
+
+  <script src="https://www.aadityapageni.com.np/js/main.js"></script>
+</body>
+
+</html>
