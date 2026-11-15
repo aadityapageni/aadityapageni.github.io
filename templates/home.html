@@ -100,6 +100,23 @@
         <a class="instant" href="{{ config.extra.blog_section_path }}">{{ section.extra.recent_more_text }}</a>
       </div>
     </section>
+    {% set notes_section = get_section(path="notes/_index.md") %}
+    {% if notes_section.pages %}
+    <section class="layout-list" style="margin-top: 2.5em;">
+      <div class="post-list">
+        {% for note in notes_section.pages | slice(end=section.extra.recent_max) %}
+        <a class="post instant {% if note.extra.featured %}featured{% endif %}" href="{{ note.permalink }}">
+          <span>{{ note.title }}</span>
+          <span class="line"></span>
+          <span class="date">{{ note.date | date(format=section.extra.date_format) }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="read-more">
+        <a class="instant" href="/notes">{{ section.extra.recent_more_text }}</a>
+      </div>
+    </section>
+    {% endif %}
   {% endif %}
   </main>
   {% if section.extra.footer %}
