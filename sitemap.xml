@@ -28,6 +28,10 @@
         <loc>https://www.aadityapageni.com.np/posts/</loc>
     </url>
     <url>
+        <loc>https://www.aadityapageni.com.np/posts/aws-emulator/</loc>
+        <lastmod>2026-11-15</lastmod>
+    </url>
+    <url>
         <loc>https://www.aadityapageni.com.np/posts/ceph-blocklist/</loc>
         <lastmod>2026-05-08</lastmod>
     </url>
@@ -47,6 +51,9 @@
         <loc>https://www.aadityapageni.com.np/tags/</loc>
     </url>
     <url>
+        <loc>https://www.aadityapageni.com.np/tags/aws/</loc>
+    </url>
+    <url>
         <loc>https://www.aadityapageni.com.np/tags/ceph/</loc>
     </url>
     <url>
@@ -54,6 +61,9 @@
     </url>
     <url>
         <loc>https://www.aadityapageni.com.np/tags/cni/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/devops/</loc>
     </url>
     <url>
         <loc>https://www.aadityapageni.com.np/tags/istio/</loc>
@@ -66,5 +76,11 @@
     </url>
     <url>
         <loc>https://www.aadityapageni.com.np/tags/openstack/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/terraform/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/testing/</loc>
     </url>
 </urlset>
