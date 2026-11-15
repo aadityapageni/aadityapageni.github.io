@@ -43,7 +43,6 @@ highlight_theme = "css"
 
 sections = [
   { name = "posts", path = "posts", is_external = false },
-  { name = "notes", path = "/notes", is_external = false },
   # { name = "tags", path = "tags", is_external = false },
   # { name = "github", path = "https://github.com/aadityapageni", is_external = true },
 ]
