@@ -13,6 +13,10 @@
         <loc>https://www.aadityapageni.com.np/notes/</loc>
     </url>
     <url>
+        <loc>https://www.aadityapageni.com.np/notes/aws-emulator-guide/</loc>
+        <lastmod>2026-11-15</lastmod>
+    </url>
+    <url>
         <loc>https://www.aadityapageni.com.np/notes/ceph-installation/</loc>
         <lastmod>2026-01-20</lastmod>
     </url>
@@ -76,6 +80,9 @@
     </url>
     <url>
         <loc>https://www.aadityapageni.com.np/tags/openstack/</loc>
+    </url>
+    <url>
+        <loc>https://www.aadityapageni.com.np/tags/rust/</loc>
     </url>
     <url>
         <loc>https://www.aadityapageni.com.np/tags/terraform/</loc>

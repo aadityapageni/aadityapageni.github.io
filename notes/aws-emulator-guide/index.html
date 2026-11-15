@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="~">
+
+  <title>Local AWS Development Without the Cloud Bill: A Practical Guide to AWS Emulator</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.aadityapageni.com.np/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.aadityapageni.com.np/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.aadityapageni.com.np/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://www.aadityapageni.com.np/main.css">
+  
+
+<link id="hl" rel="stylesheet" type="text/css" href="/hl-light.css" />
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://www.aadityapageni.com.np/giallo-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#local-aws-development-without-the-cloud-bill-a-practical-guide-to-aws-emulator">Local AWS Development Without the Cloud Bill: A Practical Guide to AWS Emulator</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#1-what-is-aws-emulator-and-how-does-it-work">1. What Is AWS Emulator and How Does It Work?</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#2-four-ways-to-get-started">2. Four Ways to Get Started</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#3-pointing-the-aws-cli-and-sdks-at-aws-emulator-zero-code-changes">3. Pointing the AWS CLI and SDKs at AWS Emulator (Zero Code Changes)</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#4-hands-on-code-examples">4. Hands-On Code Examples</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#5-understanding-fidelity-scores-checking-your-project">5. Understanding Fidelity Scores &amp; Checking Your Project</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#6-how-aws-emulator-compares-to-existing-tools">6. How AWS Emulator Compares to Existing Tools</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#7-important-limitations-best-practices">7. Important Limitations &amp; Best Practices</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#8-conclusion-resources">8. Conclusion &amp; Resources</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;www.aadityapageni.com.np&#x2F;notes">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>Local AWS Development Without the Cloud Bill: A Practical Guide to AWS Emulator</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Nov 15, 2026</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://www.aadityapageni.com.np/tags/aws"><span>#</span>aws</a><a class="instant" href="https://www.aadityapageni.com.np/tags/devops"><span>#</span>devops</a><a class="instant" href="https://www.aadityapageni.com.np/tags/terraform"><span>#</span>terraform</a><a class="instant" href="https://www.aadityapageni.com.np/tags/rust"><span>#</span>rust</a><a class="instant" href="https://www.aadityapageni.com.np/tags/testing"><span>#</span>testing</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <h1 id="local-aws-development-without-the-cloud-bill-a-practical-guide-to-aws-emulator">Local AWS Development Without the Cloud Bill: A Practical Guide to AWS Emulator</h1>
+<p>Every cloud engineer knows the pain of the "deploy-and-pray" feedback loop. You write application code that interacts with Amazon S3, Amazon DynamoDB, or AWS Cloud Map, and to verify that your API calls, parameter constraints, and cross-service workflows actually behave the way AWS expects, you have historically faced an uncomfortable choice:</p>
+<ol>
+<li><strong>Test against real AWS accounts</strong>: dealing with IAM credentials in CI pipelines, per-developer sandbox provisioning, slower network round-trips, and surprise cloud bills from orphaned resources.</li>
+<li><strong>Write hand-rolled unit mocks or use third-party emulators</strong>: risking "mock drift" where your tests pass locally because a stub accepted an invalid parameter that real AWS rejects in production.</li>
+</ol>
+<p><strong>AWS Emulator</strong> changes this equation. Released by AWS as an open-source local API emulator under the <strong>CC0 1.0 Universal</strong> public domain dedication, AWS Emulator lets you run a high-fidelity, stateful AWS endpoint right on your laptop, development server, or CI runner, with <strong>no AWS account required</strong> and <strong>no changes to your application code</strong>.</p>
+<p>Even more uniquely, AWS Emulator is <strong>continuously updated multiple times a day by AI agents</strong>, verified against real AWS behavior (<code>us-west-2</code> and <code>us-east-1</code>), and ships with a public fidelity evaluation suite so you always know exactly which APIs match production AWS.</p>
+<p>In this deep-dive guide, we will explore:</p>
+<ul>
+<li>How AWS Emulator works under the hood (ephemeral credentials, TLS, SigV4, and in-memory state).</li>
+<li>All four ways to install and run it (AI Coding Agent Skill, Linux Native, Docker, and Rust Embedded Mode).</li>
+<li>How to point the AWS CLI and language SDKs at the emulator with zero code changes.</li>
+<li>Complete, runnable examples (AWS CLI, Python Boto3 + <code>pytest</code>, Rust Embedded parallel tests, Terraform, and GitHub Actions CI/CD).</li>
+<li>How AWS Emulator's <strong>Fidelity Scores</strong> work.</li>
+<li><strong>How AWS Emulator compares to existing tools</strong> like LocalStack, Moto, DynamoDB Local, MinIO, and AWS SAM CLI.</li>
+<li>Key limitations, security caveats, and production best practices.</li>
+</ul>
+<h2 id="1-what-is-aws-emulator-and-how-does-it-work">1. What Is AWS Emulator and How Does It Work?</h2>
+<p><strong>AWS Emulator</strong> is a local command-line server (and embeddable Rust library) that emulates AWS APIs on your machine. When started as a local process, it listens on a single HTTPS endpoint (by default <code>https://127.0.0.1:9297</code>) and serves both AWS API operations and an internal health check route (<code>GET /__admin/health</code>).</p>
+<pre class="mermaid">
+  flowchart LR
+    subgraph DevMachine[&quot;Developer Machine &#x2F; CI Runner (No AWS Account Needed)&quot;]
+        direction LR
+        CLI[&quot;AWS CLI &#x2F; SDKs\n(Boto3, JS v3, Go, Java, .NET)&quot;]
+        EnvFiles[&quot;~&#x2F;.aws&#x2F;emulator&#x2F;9297&#x2F;\n• emulator_credentials\n• config\n• ca.pem &#x2F; truststore.p12&quot;]
+        
+        subgraph EmulatorProcess[&quot;aws-emulator Process (127.0.0.1:9297)&quot;]
+            Router[&quot;HTTPS + SigV4 Router\n&amp; &#x2F;__admin&#x2F;health&quot;]
+            State[&quot;In-Memory State Store\n(Account: 000000000000)&quot;]
+            S3[&quot;Amazon S3&quot;]
+            DDB[&quot;Amazon DynamoDB&quot;]
+            CM[&quot;AWS Cloud Map &#x2F; STS &#x2F; IAM &#x2F; ...&quot;]
+            
+            Router --&gt; State
+            State --&gt; S3
+            State --&gt; DDB
+            State --&gt; CM
+        end
+
+        CLI -- &quot;Reads TLS cert &amp; keys&quot; --&gt; EnvFiles
+        CLI -- &quot;HTTPS + SigV4\nhttps:&#x2F;&#x2F;127.0.0.1:9297&quot; --&gt; Router
+    end
+
+    subgraph RustProcess[&quot;Rust Test Process (Embedded Mode)&quot;]
+        RustTest[&quot;#[tokio::test]\nAWS SDK for Rust&quot;] -- &quot;In-Memory HTTP Client\n(Zero Network Sockets)&quot; --&gt; Embedded[&quot;AwsEmulatorEmbedded\n(Isolated Per-Test State)&quot;]
+    end
+</pre><h3 id="key-architectural-highlights">Key Architectural Highlights</h3>
+<ol>
+<li><strong>Single Endpoint for All Services</strong>: Every emulated AWS service is served over <code>https://127.0.0.1:9297</code> (or a custom port via <code>-p &lt;port&gt;</code>).</li>
+<li><strong>Per-Run Ephemeral Credentials &amp; TLS Certificates</strong>:
+Each time <code>aws-emulator</code> starts on port <code>9297</code>, it creates a private directory at <code>~/.aws/emulator/9297/</code> with <code>0600</code> permissions containing:
+<ul>
+<li><code>emulator_credentials</code>: Ephemeral per-run SigV4 credentials (a 20-character access key ID starting with <code>EMULATOR</code> + 12 uppercase hex chars, and a 40-character hex secret key).</li>
+<li><code>config</code>: An AWS CLI/SDK profile setting <code>region = us-east-1</code>, <code>endpoint_url</code>, <code>ca_bundle</code>, and S3 <code>signature_version = s3v4</code>.</li>
+<li><code>ca.pem</code>: A freshly generated TLS certificate for HTTPS.</li>
+<li><code>truststore.p12</code>: A passwordless PKCS12 trust store containing the same certificate for Java JVMs.</li>
+</ul>
+</li>
+<li><strong>Real SigV4 Request Signing by Default</strong>:
+Unlike naive local servers that accept any unauthenticated HTTP traffic (which exposes developers to malicious browser cross-origin or local process requests), AWS Emulator enforces AWS Signature Version 4 (SigV4) by default and validates clock skew within 15 minutes. It rejects requests signed with your real AWS credentials so you immediately catch misconfigurations.</li>
+<li><strong>In-Memory Ephemeral State</strong>:
+The emulator uses roughly <strong>160 MiB of RAM when idle</strong> and stores all created resources in memory under emulated account ID <code>000000000000</code>. When you stop the emulator (<code>Ctrl+C</code>, <code>SIGTERM</code>, or <code>--idle-timeout</code>), it cleanly deletes <code>~/.aws/emulator/&lt;port&gt;/</code> and wipes all state, guaranteeing a clean slate on the next run.</li>
+</ol>
+<h2 id="2-four-ways-to-get-started">2. Four Ways to Get Started</h2>
+<p>AWS Emulator offers four installation and execution paths depending on your OS and workflow:</p>
+<h3 id="path-a-with-an-ai-coding-agent-aws-emulator-skill">Path A: With an AI Coding Agent (<code>aws-emulator</code> Skill)</h3>
+<p>If you use an AI coding agent (such as GitHub Copilot, Kiro, Cursor, or Claude Code) and have <strong>AWS CLI v2.35.0 or later</strong>, you can install the official <code>aws-emulator</code> agent skill:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># 1. Verify AWS CLI version (&gt;= 2.35.0)
+aws --version
+
+# 2. Install the aws-emulator skill for your coding agents
+aws agent-toolkit add-skill --skill-name aws-emulator --region us-east-1
+</code></pre>
+<p>Once installed, you can prompt your agent:</p>
+<ul>
+<li><em>"Install AWS Emulator and point my project at it."</em></li>
+<li><em>"Will my app in this repo work on AWS Emulator?"</em> (The agent inspects the AWS API operations your codebase uses and cross-references them against the official fidelity manifest.)</li>
+</ul>
+<h3 id="path-b-native-linux-package-rpm-debian">Path B: Native Linux Package (RPM &amp; Debian)</h3>
+<p>On 64-bit Linux (<code>x86_64</code> or <code>aarch64</code> with <code>glibc &gt;= 2.17</code>), AWS Emulator runs natively and installs into <code>/opt/aws-emulator/</code> with <code>/usr/bin/aws-emulator</code> on your <code>PATH</code>.</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># RPM-based systems (Amazon Linux 2023, Fedora, RHEL - x86_64)
+sudo dnf install -y https:&#x2F;&#x2F;downloads.aws.com&#x2F;aws-emulator&#x2F;packages&#x2F;aws-emulator&#x2F;LTS&#x2F;latest&#x2F;aws-emulator-x86_64.rpm
+
+# Debian&#x2F;Ubuntu systems (amd64)
+curl -fsSLo aws-emulator.deb https:&#x2F;&#x2F;downloads.aws.com&#x2F;aws-emulator&#x2F;packages&#x2F;aws-emulator&#x2F;LTS&#x2F;latest&#x2F;aws-emulator_amd64.deb
+sudo apt-get install -y .&#x2F;aws-emulator.deb
+
+# Verify installation
+aws-emulator -v
+</code></pre>
+<blockquote>
+<p><strong>Tip: Cap Memory Usage on Linux:</strong> Because resources live in memory, you can run the emulator inside a <code>systemd</code> cgroup v2 scope with a hard 2 GiB cap and zero swap:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">systemd-run --user --scope -p MemoryMax=2G -p MemorySwapMax=0 aws-emulator
+</code></pre>
+</blockquote>
+<h3 id="path-c-docker-container-macos-windows-and-linux">Path C: Docker Container (macOS, Windows, and Linux)</h3>
+<p>On macOS and Windows (or containerized Linux workflows), you build a lightweight container image from Amazon Linux 2023 Minimal. (See <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/docker/Dockerfile">docker/Dockerfile</a> and <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/docker/run-emulator.sh">docker/run-emulator.sh</a> in the companion repo.)</p>
+<pre data-lang="dockerfile" class="language-dockerfile "><code class="language-dockerfile" data-lang="dockerfile">FROM public.ecr.aws&#x2F;amazonlinux&#x2F;amazonlinux:2023-minimal
+# Replace x86_64 with aarch64 on Apple Silicon &#x2F; ARM64 machines
+ADD https:&#x2F;&#x2F;downloads.aws.com&#x2F;aws-emulator&#x2F;packages&#x2F;aws-emulator&#x2F;LTS&#x2F;latest&#x2F;aws-emulator-x86_64.rpm &#x2F;tmp&#x2F;aws-emulator.rpm
+RUN rpm -i &#x2F;tmp&#x2F;aws-emulator.rpm &amp;&amp; rm &#x2F;tmp&#x2F;aws-emulator.rpm \
+    &amp;&amp; mkdir -p &#x2F;home&#x2F;emulator &amp;&amp; chown 1000 &#x2F;home&#x2F;emulator
+USER 1000
+ENV HOME=&#x2F;home&#x2F;emulator
+EXPOSE 9297
+ENTRYPOINT [&quot;aws-emulator&quot;, &quot;-b&quot;, &quot;0.0.0.0&quot;]
+</code></pre>
+<p>Build and run the container, mounting <code>~/.aws/emulator</code> so your host SDKs can read the generated credentials and <code>ca.pem</code>:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">docker build -t aws-emulator .
+mkdir -p ~&#x2F;.aws&#x2F;emulator
+
+PORT=9297
+docker run --rm --memory=2g --memory-swap=2g \
+  -p 127.0.0.1:$PORT:$PORT \
+  --user &quot;$(id -u):$(id -g)&quot; \
+  -e HOME=&quot;$HOME&quot; \
+  -v &quot;$HOME&#x2F;.aws&#x2F;emulator:$HOME&#x2F;.aws&#x2F;emulator&quot; \
+  aws-emulator -p $PORT
+</code></pre>
+<blockquote>
+<p><strong>Security Note:</strong> Always publish the port on loopback (<code>-p 127.0.0.1:$PORT:$PORT</code>), never <code>-p 9297:9297</code>, so other machines on your network cannot reach your local emulator.</p>
+</blockquote>
+<h3 id="path-d-embedded-mode-for-rust">Path D: Embedded Mode for Rust</h3>
+<p>If you write applications in Rust using the AWS SDK for Rust, you can add the <code>aws-emulator-embedded</code> crate to <code>[dev-dependencies]</code>. Each test spins up its own isolated, in-process emulator without binding network ports or writing certificate files.</p>
+<h2 id="3-pointing-the-aws-cli-and-sdks-at-aws-emulator-zero-code-changes">3. Pointing the AWS CLI and SDKs at AWS Emulator (Zero Code Changes)</h2>
+<p>Once <code>aws-emulator</code> is running on port <code>9297</code>, configure your terminal shell so any AWS CLI command or SDK client talks to the local emulator instead of AWS. (A ready-to-source script is included in <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/env-setup.sh">env-setup.sh</a>.)</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash"># 1. Point endpoints, credentials, config, and TLS CA bundle to the emulator&#x27;s port directory
+export AWS_ENDPOINT_URL=https:&#x2F;&#x2F;127.0.0.1:9297
+export AWS_SHARED_CREDENTIALS_FILE=~&#x2F;.aws&#x2F;emulator&#x2F;9297&#x2F;emulator_credentials
+export AWS_CONFIG_FILE=~&#x2F;.aws&#x2F;emulator&#x2F;9297&#x2F;config
+export AWS_CA_BUNDLE=~&#x2F;.aws&#x2F;emulator&#x2F;9297&#x2F;ca.pem
+
+# 2. Prevent SDKs from querying EC2 instance metadata or mutating the endpoint hostname
+export AWS_EC2_METADATA_DISABLED=true
+export AWS_DISABLE_HOST_PREFIX_INJECTION=true
+export AWS_REGION=us-east-1
+export AWS_DEFAULT_REGION=us-east-1
+
+# 3. CRITICAL: Unset real AWS credential environment variables so they don&#x27;t override the file
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_PROFILE
+</code></pre>
+<h3 id="verify-you-are-talking-to-the-emulator">Verify You Are Talking to the Emulator</h3>
+<p>Before running tests, always verify your caller identity:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">$ aws sts get-caller-identity
+{
+    &quot;UserId&quot;: &quot;EMULATORUSERID&quot;,
+    &quot;Account&quot;: &quot;000000000000&quot;,
+    &quot;Arn&quot;: &quot;arn:aws:iam::000000000000:user&#x2F;emulator&quot;
+}
+</code></pre>
+<p>If you see <code>"Account": "000000000000"</code>, your shell is safely isolated from real AWS.</p>
+<h3 id="sdk-specific-tls-certificate-hostname-nuances">SDK-Specific TLS Certificate &amp; Hostname Nuances</h3>
+<p>While the AWS CLI, Python (Boto3), and Go v2 automatically trust <code>AWS_CA_BUNDLE</code>, other language runtimes need one extra environment variable to trust the emulator's self-signed certificate:</p>
+<table><thead><tr><th style="text-align: left">Client / SDK</th><th style="text-align: left">Extra HTTPS Certificate Setting</th><th style="text-align: left">Host Prefix Injection Setting</th></tr></thead><tbody>
+<tr><td style="text-align: left"><strong>AWS CLI v2</strong></td><td style="text-align: left">None (reads <code>AWS_CA_BUNDLE</code>)</td><td style="text-align: left"><code>export AWS_DISABLE_HOST_PREFIX_INJECTION=true</code></td></tr>
+<tr><td style="text-align: left"><strong>Python (Boto3)</strong></td><td style="text-align: left">None (reads <code>AWS_CA_BUNDLE</code>)</td><td style="text-align: left"><code>export AWS_DISABLE_HOST_PREFIX_INJECTION=true</code> or <code>Config(inject_host_prefix=False)</code></td></tr>
+<tr><td style="text-align: left"><strong>Go SDK v2</strong></td><td style="text-align: left">None (reads <code>AWS_CA_BUNDLE</code>)</td><td style="text-align: left">Handled via endpoint resolver</td></tr>
+<tr><td style="text-align: left"><strong>JavaScript v3 (Node.js)</strong></td><td style="text-align: left"><code>export NODE_EXTRA_CA_CERTS=~/.aws/emulator/9297/ca.pem</code></td><td style="text-align: left">Pass <code>disableHostPrefix: true</code> to client constructor</td></tr>
+<tr><td style="text-align: left"><strong>Java SDK 2.x</strong></td><td style="text-align: left"><code>export JAVA_TOOL_OPTIONS="-Djavax.net.ssl.trustStore=$HOME/.aws/emulator/9297/truststore.p12 -Djavax.net.ssl.trustStoreType=PKCS12"</code></td><td style="text-align: left">Set <code>SdkAdvancedClientOption.DISABLE_HOST_PREFIX_INJECTION</code> to <code>true</code></td></tr>
+<tr><td style="text-align: left"><strong>Rust SDK (Process Mode)</strong></td><td style="text-align: left"><code>export SSL_CERT_FILE=~/.aws/emulator/9297/ca.pem</code></td><td style="text-align: left">Or use <code>aws-emulator-embedded</code> (no TLS needed)</td></tr>
+<tr><td style="text-align: left"><strong>.NET SDK</strong></td><td style="text-align: left"><code>export SSL_CERT_FILE=~/.aws/emulator/9297/ca.pem</code></td><td style="text-align: left">Set <code>DisableHostPrefixInjection = true</code> in client config</td></tr>
+</tbody></table>
+<blockquote>
+<p><strong>Why <code>127.0.0.1</code> Instead of <code>localhost</code>?</strong>
+Always use <code>https://127.0.0.1:9297</code> in <code>AWS_ENDPOINT_URL</code>. Because <code>127.0.0.1</code> is an IP address, the AWS SDKs for JavaScript, Java, and Go automatically keep Amazon S3 bucket names in the URL <strong>path</strong> (<code>https://127.0.0.1:9297/my-bucket</code>) rather than prepending the bucket name to the hostname (<code>https://my-bucket.localhost:9297</code>), which would fail DNS resolution.</p>
+</blockquote>
+<h2 id="4-hands-on-code-examples">4. Hands-On Code Examples</h2>
+<p>All examples below are included as runnable files in the <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test">aadityapageni/aws-simulator-test</a> repository.</p>
+<h3 id="example-1-aws-cli-stateful-persistence-exact-validation-errors-host-prefixes">Example 1: AWS CLI: Stateful Persistence, Exact Validation Errors &amp; Host Prefixes</h3>
+<p><em>(See <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/cli-walkthrough.sh">cli-walkthrough.sh</a>)</em></p>
+<p>First, create an Amazon S3 bucket and query it back. The emulator retains state in memory across commands:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">$ aws s3api create-bucket --bucket amzn-s3-demo-bucket
+{
+    &quot;Location&quot;: &quot;&#x2F;amzn-s3-demo-bucket&quot;
+}
+
+$ aws s3api list-buckets --query &#x27;Buckets[].Name&#x27;
+[
+    &quot;amzn-s3-demo-bucket&quot;
+]
+</code></pre>
+<p>Next, test how AWS Emulator handles <strong>invalid API inputs</strong>. On real AWS, Amazon DynamoDB table names must be at least 3 characters long. If we try to create a table named <code>ab</code>, the emulator rejects the call with the exact <code>ValidationException</code> message that real AWS returns:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">$ aws dynamodb create-table --table-name ab \
+    --attribute-definitions AttributeName=id,AttributeType=S \
+    --key-schema AttributeName=id,KeyType=HASH \
+    --billing-mode PAY_PER_REQUEST
+
+An error occurred (ValidationException) when calling the CreateTable operation: 1 validation error detected: Value &#x27;ab&#x27; at &#x27;tableName&#x27; failed to satisfy constraint: Member must have length greater than or equal to 3
+</code></pre>
+<p>Finally, consider operations like AWS Cloud Map <code>DiscoverInstances</code>, which normally prepend <code>data-</code> to the endpoint hostname (<code>https://data-127.0.0.1:9297/</code>). With <code>AWS_DISABLE_HOST_PREFIX_INJECTION=true</code> set, the request routes cleanly to the emulator:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">$ export AWS_DISABLE_HOST_PREFIX_INJECTION=true
+$ aws servicediscovery discover-instances \
+    --namespace-name my-namespace \
+    --service-name my-service \
+    --query &#x27;Instances[].{InstanceId: InstanceId, Attributes: Attributes}&#x27;
+[
+    {
+        &quot;InstanceId&quot;: &quot;my-instance&quot;,
+        &quot;Attributes&quot;: {
+            &quot;AWS_INSTANCE_IPV4&quot;: &quot;10.0.0.1&quot;
+        }
+    }
+]
+</code></pre>
+<h3 id="example-2-python-boto3-cross-service-s3-dynamodb-workflow">Example 2: Python (Boto3): Cross-Service S3 + DynamoDB Workflow</h3>
+<p><em>(See <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/python-boto3/document_store.py">python-boto3/document_store.py</a> and <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/python-boto3/test_document_store.py">python-boto3/test_document_store.py</a>)</em></p>
+<p>Notice that our production Python module contains <strong>no hardcoded endpoints, credentials, or test flags</strong>. It simply creates standard <code>boto3</code> clients:</p>
+<pre data-lang="python" class="language-python "><code class="language-python" data-lang="python"># python-boto3&#x2F;document_store.py
+import hashlib
+import json
+from datetime import datetime, timezone
+import boto3
+
+
+class DocumentStore:
+    &quot;&quot;&quot;Stores JSON documents in S3 and indexes their metadata in DynamoDB.&quot;&quot;&quot;
+
+    def __init__(self, bucket_name: str, table_name: str) -&gt; None:
+        self.bucket_name = bucket_name
+        self.table_name = table_name
+        self.s3 = boto3.client(&quot;s3&quot;)
+        self.dynamodb = boto3.resource(&quot;dynamodb&quot;)
+        self.table = self.dynamodb.Table(table_name)
+
+    def provision(self) -&gt; None:
+        self.s3.create_bucket(Bucket=self.bucket_name)
+        client = self.dynamodb.meta.client
+        client.create_table(
+            TableName=self.table_name,
+            AttributeDefinitions=[{&quot;AttributeName&quot;: &quot;doc_id&quot;, &quot;AttributeType&quot;: &quot;S&quot;}],
+            KeySchema=[{&quot;AttributeName&quot;: &quot;doc_id&quot;, &quot;KeyType&quot;: &quot;HASH&quot;}],
+            BillingMode=&quot;PAY_PER_REQUEST&quot;,
+        )
+        # Just like real AWS, CreateTable starts in CREATING status before becoming ACTIVE
+        self.table.wait_until_exists(WaiterConfig={&quot;Delay&quot;: 1, &quot;MaxAttempts&quot;: 10})
+
+
+    def save_document(self, doc_id: str, payload: dict) -&gt; dict:
+        raw_bytes = json.dumps(payload, sort_keys=True).encode(&quot;utf-8&quot;)
+        sha256_hex = hashlib.sha256(raw_bytes).hexdigest()
+        s3_key = f&quot;documents&#x2F;{doc_id}.json&quot;
+
+        self.s3.put_object(
+            Bucket=self.bucket_name,
+            Key=s3_key,
+            Body=raw_bytes,
+            ContentType=&quot;application&#x2F;json&quot;,
+        )
+
+        item = {
+            &quot;doc_id&quot;: doc_id,
+            &quot;s3_key&quot;: s3_key,
+            &quot;sha256&quot;: sha256_hex,
+            &quot;size_bytes&quot;: len(raw_bytes),
+            &quot;created_at&quot;: datetime.now(timezone.utc).isoformat(),
+        }
+        self.table.put_item(Item=item)
+        return item
+
+    def get_document(self, doc_id: str) -&gt; dict:
+        meta = self.table.get_item(Key={&quot;doc_id&quot;: doc_id}).get(&quot;Item&quot;)
+        if not meta:
+            raise KeyError(f&quot;Document {doc_id} not found in index&quot;)
+
+        obj = self.s3.get_object(Bucket=self.bucket_name, Key=meta[&quot;s3_key&quot;])
+        body = json.loads(obj[&quot;Body&quot;].read().decode(&quot;utf-8&quot;))
+        return {&quot;metadata&quot;: meta, &quot;content&quot;: body}
+</code></pre>
+<p>With our emulator environment variables exported (<code>source env-setup.sh</code>), our <code>pytest</code> suite tests both the happy path across S3 and DynamoDB and the DynamoDB validation constraint without touching the cloud:</p>
+<pre data-lang="python" class="language-python "><code class="language-python" data-lang="python"># python-boto3&#x2F;test_document_store.py
+import uuid
+import pytest
+from botocore.exceptions import ClientError
+from document_store import DocumentStore
+
+
+def test_save_and_retrieve_document():
+    suffix = uuid.uuid4().hex[:8]
+    store = DocumentStore(
+        bucket_name=f&quot;docs-bucket-{suffix}&quot;,
+        table_name=f&quot;docs-index-{suffix}&quot;,
+    )
+    store.provision()
+
+    saved_meta = store.save_document(&quot;order-1001&quot;, {&quot;customer&quot;: &quot;Ada&quot;, &quot;total&quot;: 42})
+    result = store.get_document(&quot;order-1001&quot;)
+
+    assert result[&quot;content&quot;] == {&quot;customer&quot;: &quot;Ada&quot;, &quot;total&quot;: 42}
+    assert result[&quot;metadata&quot;][&quot;sha256&quot;] == saved_meta[&quot;sha256&quot;]
+
+
+def test_dynamodb_rejects_short_table_name():
+    store = DocumentStore(bucket_name=&quot;valid-bucket-name&quot;, table_name=&quot;ab&quot;)
+    with pytest.raises(ClientError) as exc_info:
+        store.provision()
+
+    err = exc_info.value.response[&quot;Error&quot;]
+    assert err[&quot;Code&quot;] == &quot;ValidationException&quot;
+    assert &quot;length greater than or equal to 3&quot; in err[&quot;Message&quot;]
+</code></pre>
+<h3 id="example-3-rust-embedded-mode-parallel-in-process-testing">Example 3: Rust Embedded Mode: Parallel In-Process Testing</h3>
+<p><em>(See <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/rust-embedded/Cargo.toml">rust-embedded/Cargo.toml</a> and <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/rust-embedded/src/lib.rs">rust-embedded/src/lib.rs</a>)</em></p>
+<p>In Rust projects, you don't even need a background <code>aws-emulator</code> daemon. Add <code>aws-emulator-embedded</code> to <code>[dev-dependencies]</code> pinned to a specific release commit:</p>
+<pre data-lang="toml" class="language-toml "><code class="language-toml" data-lang="toml">[dependencies]
+aws-config = &quot;1&quot;
+aws-sdk-s3 = &quot;1&quot;
+
+[dev-dependencies]
+aws-emulator-embedded = { git = &quot;https:&#x2F;&#x2F;github.com&#x2F;aws&#x2F;aws-emulator&quot;, rev = &quot;&lt;release-commit&gt;&quot; }
+tokio = { version = &quot;1&quot;, features = [&quot;macros&quot;, &quot;rt-multi-thread&quot;] }
+
+# aws-emulator-embedded links 400+ service crates; stripping debug sections at
+# link time prevents &gt;4GiB 32-bit DWARF (.debug_macro) relocation overflow in ld.lld.
+[profile.dev]
+debug = false
+strip = &quot;debuginfo&quot;
+</code></pre>
+<p>Each <code>#[tokio::test]</code> creates its own <code>AwsEmulatorEmbedded</code> instance and passes <code>emulator.http_client()</code> and <code>emulator.aws_credentials_provider()</code> to <code>aws_config</code>. Two tests can even create the exact same bucket name simultaneously without colliding:</p>
+<pre data-lang="rust" class="language-rust "><code class="language-rust" data-lang="rust">use aws_emulator_embedded::{Authentication, AwsEmulatorEmbedded, EmbeddedOptions};
+use aws_sdk_s3::primitives::ByteStream;
+
+#[tokio::test]
+async fn put_then_get_returns_the_body() {
+    &#x2F;&#x2F; Dedicated in-memory emulator for this test only (with SigV4 auth enabled)
+    let emulator = AwsEmulatorEmbedded::new(
+        EmbeddedOptions::default().authentication(Authentication::On),
+    );
+
+    let config = aws_config::defaults(aws_config::BehaviorVersion::latest())
+        .http_client(emulator.http_client())
+        .region(aws_config::Region::new(&quot;us-east-1&quot;))
+        .credentials_provider(emulator.aws_credentials_provider())
+        .load()
+        .await;
+
+    let s3 = aws_sdk_s3::Client::new(&amp;config);
+
+    s3.create_bucket()
+        .bucket(&quot;emulator-demo-bucket&quot;)
+        .send()
+        .await
+        .unwrap();
+
+    s3.put_object()
+        .bucket(&quot;emulator-demo-bucket&quot;)
+        .key(&quot;greeting.txt&quot;)
+        .body(ByteStream::from_static(b&quot;hello from embedded emulator&quot;))
+        .send()
+        .await
+        .unwrap();
+
+    let got = s3
+        .get_object()
+        .bucket(&quot;emulator-demo-bucket&quot;)
+        .key(&quot;greeting.txt&quot;)
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(
+        got.body.collect().await.unwrap().to_vec(),
+        b&quot;hello from embedded emulator&quot;
+    );
+}
+</code></pre>
+<h3 id="example-4-ci-cd-pipeline-integration-github-actions">Example 4: CI/CD Pipeline Integration (GitHub Actions)</h3>
+<p><em>(See <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/ci/github-actions.yml">ci/github-actions.yml</a>)</em></p>
+<p>In CI/CD pipelines, AWS Emulator eliminates the need for OIDC IAM roles, long-lived AWS secrets, or shared staging accounts for functional tests. Two flags are particularly helpful in CI:</p>
+<ul>
+<li><code>--idle-timeout 300</code>: Automatically shuts down the emulator after 5 minutes of inactivity so hung jobs never linger.</li>
+<li><code>--telemetry off</code>: Disables anonymous usage telemetry if your CI environment restricts outbound calls.</li>
+</ul>
+<pre data-lang="yaml" class="language-yaml "><code class="language-yaml" data-lang="yaml">name: Integration Tests (AWS Emulator)
+
+on: [push, pull_request]
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions&#x2F;checkout@v4
+
+      - name: Install AWS Emulator
+        run: |
+          curl -fsSLo aws-emulator.deb https:&#x2F;&#x2F;downloads.aws.com&#x2F;aws-emulator&#x2F;packages&#x2F;aws-emulator&#x2F;LTS&#x2F;latest&#x2F;aws-emulator_amd64.deb
+          sudo apt-get install -y .&#x2F;aws-emulator.deb
+          aws-emulator -v
+
+      - name: Start AWS Emulator &amp; Run Tests
+        run: |
+          # Start emulator in background with a 120-second idle timeout
+          aws-emulator --idle-timeout 120 --telemetry off &amp;
+
+          # Poll the HTTPS health check endpoint until ready
+          for i in $(seq 30); do
+            if [ -f ~&#x2F;.aws&#x2F;emulator&#x2F;9297&#x2F;ca.pem ] &amp;&amp; \
+               curl -sf --cacert ~&#x2F;.aws&#x2F;emulator&#x2F;9297&#x2F;ca.pem https:&#x2F;&#x2F;127.0.0.1:9297&#x2F;__admin&#x2F;health; then
+              echo &quot;AWS Emulator is healthy!&quot;
+              break
+            fi
+            sleep 1
+          done
+
+          # Export emulator variables and unset any ambient AWS credentials
+          source .&#x2F;env-setup.sh
+          PYTHONPATH=python-boto3 pytest python-boto3&#x2F;
+</code></pre>
+<h3 id="example-5-infrastructure-as-code-with-terraform-init-plan-apply-destroy">Example 5: Infrastructure as Code with Terraform (<code>init</code> / <code>plan</code> / <code>apply</code> / <code>destroy</code>)</h3>
+<p><em>(See <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/terraform/main.tf">terraform/main.tf</a>)</em></p>
+<p>I have also tested Terraform (<code>hashicorp/aws v5.100.0</code>) against AWS Emulator. Because the <code>hashicorp/aws</code> Terraform provider is built on the <strong>AWS SDK for Go v2</strong>, it natively reads <code>AWS_ENDPOINT_URL</code>, <code>AWS_SHARED_CREDENTIALS_FILE</code>, <code>AWS_CONFIG_FILE</code>, and <code>AWS_CA_BUNDLE</code>. Unlike older local emulators that require hardcoding custom <code>endpoints {}</code> blocks for every service, your Terraform configuration stays clean:</p>
+<pre data-lang="hcl" class="language-hcl "><code class="language-hcl" data-lang="hcl"># terraform&#x2F;main.tf
+terraform {
+  required_version = &quot;&gt;= 1.5.0&quot;
+  required_providers {
+    aws = {
+      source  = &quot;hashicorp&#x2F;aws&quot;
+      version = &quot;~&gt; 5.0&quot;
+    }
+  }
+}
+
+provider &quot;aws&quot; {
+  region            = &quot;us-east-1&quot;
+  s3_use_path_style = true
+}
+
+data &quot;aws_caller_identity&quot; &quot;current&quot; {}
+
+resource &quot;aws_s3_bucket&quot; &quot;app_bucket&quot; {
+  bucket = &quot;tf-emulator-demo-bucket&quot;
+}
+
+resource &quot;aws_dynamodb_table&quot; &quot;app_table&quot; {
+  name         = &quot;tf-emulator-orders&quot;
+  billing_mode = &quot;PAY_PER_REQUEST&quot;
+  hash_key     = &quot;order_id&quot;
+
+  attribute {
+    name = &quot;order_id&quot;
+    type = &quot;S&quot;
+  }
+}
+
+resource &quot;aws_sqs_queue&quot; &quot;app_queue&quot; {
+  name                       = &quot;tf-emulator-events-queue&quot;
+  visibility_timeout_seconds = 45
+}
+</code></pre>
+<p>Run <code>terraform init</code>, source the environment variables, and apply against the local emulator:</p>
+<pre data-lang="bash" class="language-bash "><code class="language-bash" data-lang="bash">$ cd terraform
+$ terraform init
+$ source ..&#x2F;env-setup.sh 9297
+$ terraform apply -auto-approve
+...
+Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+dynamodb_table_arn = &quot;arn:aws:dynamodb:us-east-1:000000000000:table&#x2F;tf-emulator-orders&quot;
+emulator_account_id = &quot;000000000000&quot;
+s3_bucket_arn = &quot;arn:aws:s3:::tf-emulator-demo-bucket&quot;
+sqs_queue_url = &quot;https:&#x2F;&#x2F;sqs.us-east-1.amazonaws.com&#x2F;000000000000&#x2F;tf-emulator-events-queue&quot;
+</code></pre>
+<blockquote>
+<p><strong>Terraform TLS Tip:</strong> Use <code>AWS_CA_BUNDLE</code> (which is read only by the AWS Go SDK inside <code>terraform-provider-aws</code>), and <strong>do not</strong> set <code>SSL_CERT_FILE</code> when running <code>terraform init</code>. Setting <code>SSL_CERT_FILE</code> replaces the system CA bundle for the Terraform CLI itself, which would block <code>terraform init</code> from verifying <code>registry.terraform.io</code> over HTTPS.</p>
+</blockquote>
+<h3 id="example-6-four-real-world-production-scenarios-verified-in-pytest">Example 6: Four Real-World Production Scenarios (Verified in <code>pytest</code>)</h3>
+<p><em>(See <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test/blob/main/python-boto3/test_real_life_scenarios.py">python-boto3/test_real_life_scenarios.py</a>)</em></p>
+<p>Beyond basic CRUD and Terraform, we also tested four high-value real-world engineering workflows against the live emulator:</p>
+<ol>
+<li><strong>In-Process AWS Lambda <code>.zip</code> Execution with IAM Role Enforcement</strong>:
+<ul>
+<li>AWS Emulator embeds Python and Node.js runtimes directly in the binary. When you upload a <code>.zip</code> package with <code>create_function</code> and call <code>lambda.invoke()</code>, it runs your handler in-process and executes any nested <code>boto3</code> calls <em>as the function's IAM execution role</em>, catching missing role permissions (such as <code>s3:PutObject</code>) locally without needing Docker containers.</li>
+</ul>
+</li>
+<li><strong>Event-Driven SNS -&gt; SQS Fan-Out &amp; Queue Policy Validation</strong>:
+<ul>
+<li>Subscribing an SQS queue to an SNS topic and calling <code>sns.publish()</code> delivers the SNS JSON envelope into the SQS queue <strong>only</strong> if you attach an SQS Queue Policy granting <code>sns.amazonaws.com</code> permission to call <code>sqs:SendMessage</code> (matching real AWS behavior and catching silent drop bugs locally).</li>
+</ul>
+</li>
+<li><strong>S3 Presigned URLs (<code>PUT</code> and <code>GET</code>) for Frontend Upload Testing</strong>:
+<ul>
+<li><code>s3.generate_presigned_url("put_object", ...)</code> and <code>"get_object"</code> generate SigV4-signed URLs that work with standard HTTP clients (<code>urllib</code>, <code>fetch</code>, <code>curl</code>), making it easy to test browser/mobile direct-to-S3 upload flows locally.</li>
+</ul>
+</li>
+<li><strong>CloudFormation Stack Deployment (<code>create_stack</code>)</strong>:
+<ul>
+<li>Deploying a CloudFormation template with <code>AWS::S3::Bucket</code> and <code>AWS::SQS::Queue</code> transitions from <code>CREATE_IN_PROGRESS</code> to <code>CREATE_COMPLETE</code> and materializes the actual bucket and queue in the S3 and SQS services.</li>
+</ul>
+</li>
+</ol>
+<h2 id="5-understanding-fidelity-scores-checking-your-project">5. Understanding Fidelity Scores &amp; Checking Your Project</h2>
+<p>One of the biggest challenges with any cloud emulator is knowing <strong>where the emulation stops</strong>. AWS solves this transparently through <strong>Fidelity Tests</strong> and <strong>Fidelity Scores</strong>.</p>
+<h3 id="how-fidelity-is-measured">How Fidelity Is Measured</h3>
+<ul>
+<li><strong>Supported API Surface</strong>: AWS Emulator supports AWS services that publish an API model in the official <a rel="nofollow noreferrer" href="https://github.com/aws/api-models-aws">aws/api-models-aws</a> repository.</li>
+<li><strong>Fast Failure on Unimplemented Operations</strong>: If your code calls an operation that AWS Emulator does not implement yet, it immediately returns <strong>HTTP 501 (<code>NotImplemented</code>)</strong> rather than silently returning fake empty data.</li>
+<li><strong>Fidelity Tests (<code>aws-emulator-evaluation-suite</code>)</strong>: A fidelity test is an executable SDK workflow verified against real AWS in <code>us-west-2</code> (or <code>us-east-1</code> for global services). To pass a test, the emulator must match AWS on every call in the workflow: status code, created resources, side effects, and exact error codes/messages on invalid requests.</li>
+<li><strong>Control Plane vs. Data Plane</strong>: Each test in <code>manifest.jsonl</code> is labeled by plane. Today, AWS Emulator has its highest fidelity on <strong>control plane APIs</strong> (create, describe, update, delete, and list resources), while <strong>data plane APIs</strong> and Infrastructure-as-Code (CloudFormation, Terraform, CDK) support vary by service.</li>
+<li><strong>No Regressions</strong>: Passing fidelity tests are locked in and do not regress across releases.</li>
+</ul>
+<h3 id="how-to-check-if-your-project-will-work">How to Check If Your Project Will Work</h3>
+<ol>
+<li><strong>Automated (Recommended)</strong>: Install the <code>aws-emulator</code> skill and ask your AI coding agent: <em>"Will my app in this repo work on AWS Emulator?"</em></li>
+<li><strong>Manual Check</strong>:
+<ul>
+<li>List the AWS service operations your code invokes.</li>
+<li>Check <code>manifest.jsonl</code> in <a rel="nofollow noreferrer" href="https://github.com/aws/aws-emulator-evaluation-suite">github.com/aws/aws-emulator-evaluation-suite</a>.</li>
+<li>Review the per-service fidelity scores published on the <a rel="nofollow noreferrer" href="https://github.com/aws/aws-emulator/releases">AWS Emulator GitHub Releases page</a>, or run <code>fidelity_tests_runner</code> locally against your installed build.</li>
+</ul>
+</li>
+</ol>
+<h2 id="6-how-aws-emulator-compares-to-existing-tools">6. How AWS Emulator Compares to Existing Tools</h2>
+<p>The AWS ecosystem already has several popular local testing tools, most notably <strong>LocalStack</strong>, <strong>Moto</strong>, <strong>single-service official emulators</strong> (DynamoDB Local, Step Functions Local, MinIO/S3Mock), and <strong>AWS SAM CLI</strong>. How does AWS Emulator fit into this landscape?</p>
+<h3 id="feature-comparison-matrix">Feature Comparison Matrix</h3>
+<table><thead><tr><th style="text-align: left">Dimension</th><th style="text-align: left"><strong>AWS Emulator</strong></th><th style="text-align: left"><strong>LocalStack (Community / Pro)</strong></th><th style="text-align: left"><strong>Moto (Library / Server)</strong></th><th style="text-align: left"><strong>Single-Service Tools (DynamoDB Local, MinIO, etc.)</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left"><strong>Maintainer &amp; License</strong></td><td style="text-align: left"><strong>Official AWS</strong> · Open Source (<strong>CC0 1.0 Public Domain</strong> + Apache 2.0 vendor)</td><td style="text-align: left">Third-party (LocalStack GmbH) · Apache 2.0 (Community) / Commercial (Pro)</td><td style="text-align: left">Community Open Source · Apache 2.0</td><td style="text-align: left">Mixed (AWS proprietary JAR for DynamoDB Local, AGPLv3 for MinIO)</td></tr>
+<tr><td style="text-align: left"><strong>Cost</strong></td><td style="text-align: left"><strong>100% Free</strong> (no gated tiers)</td><td style="text-align: left">Free tier + Paid Pro/Enterprise tiers for advanced services &amp; features</td><td style="text-align: left">100% Free</td><td style="text-align: left">Free</td></tr>
+<tr><td style="text-align: left"><strong>Runtime &amp; Footprint</strong></td><td style="text-align: left">Single native binary (~160 MiB idle RAM) or Rust in-process library</td><td style="text-align: left">Docker container (Python + JVM + Go runtimes, heavier RAM footprint)</td><td style="text-align: left">Python in-process decorator/context manager or Flask server</td><td style="text-align: left">Separate JVM / Go processes per service</td></tr>
+<tr><td style="text-align: left"><strong>Multi-Service Single Endpoint</strong></td><td style="text-align: left"><strong>Yes</strong> (<code>https://127.0.0.1:9297</code>)</td><td style="text-align: left"><strong>Yes</strong> (<code>http://localhost:4566</code>)</td><td style="text-align: left">Yes (in server mode)</td><td style="text-align: left"><strong>No</strong> (separate port &amp; config per service)</td></tr>
+<tr><td style="text-align: left"><strong>In-Process Parallel Testing</strong></td><td style="text-align: left"><strong>Yes (Rust SDK)</strong> via <code>aws-emulator-embedded</code></td><td style="text-align: left">No (network daemon / container)</td><td style="text-align: left"><strong>Yes (Python Boto3)</strong> via <code>@mock_aws</code></td><td style="text-align: left">No</td></tr>
+<tr><td style="text-align: left"><strong>Update Cadence &amp; Verification</strong></td><td style="text-align: left"><strong>Continuous (multiple times/day via AI agents)</strong> + public <code>aws-emulator-evaluation-suite</code></td><td style="text-align: left">Frequent releases; internal &amp; community test suites</td><td style="text-align: left">Community PR-driven</td><td style="text-align: left">Periodic releases per service team</td></tr>
+<tr><td style="text-align: left"><strong>Security &amp; SigV4 by Default</strong></td><td style="text-align: left"><strong>Strict HTTPS + per-run ephemeral SigV4 credentials</strong> by default</td><td style="text-align: left">Permissive HTTP by default (<code>test</code>/<code>test</code> credentials unless configured)</td><td style="text-align: left">Permissive HTTP / mocked botocore hooks</td><td style="text-align: left">Varies by tool</td></tr>
+<tr><td style="text-align: left"><strong>Control Plane vs. Data Plane</strong></td><td style="text-align: left">Strongest on <strong>Control Plane APIs</strong>; explicit HTTP 501 on unimplemented calls</td><td style="text-align: left">Deep <strong>Data Plane + Execution</strong> (Lambda containers, RDS, EventBridge pipes, CDK/TF)</td><td style="text-align: left">Broad Python Boto3 coverage across control &amp; basic data planes</td><td style="text-align: left">Deep data plane for that <strong>single</strong> service only</td></tr>
+<tr><td style="text-align: left"><strong>AI Coding Agent Integration</strong></td><td style="text-align: left"><strong>Built-in <code>aws-emulator</code> skill</strong> via AWS Agent Toolkit</td><td style="text-align: left">Community MCP / scripts</td><td style="text-align: left">None built-in</td><td style="text-align: left">None built-in</td></tr>
+</tbody></table>
+<h3 id="architectural-breakdown-when-to-choose-which">Architectural Breakdown: When to Choose Which</h3>
+<h4 id="1-aws-emulator-vs-localstack">1. AWS Emulator vs. LocalStack</h4>
+<ul>
+<li><strong>Where AWS Emulator wins</strong>:
+<ul>
+<li><strong>First-party, zero-cost license</strong>: Entirely free under CC0 1.0 public domain with no features locked behind a commercial license.</li>
+<li><strong>Lightweight native execution</strong>: Runs directly as a ~160 MiB Linux process or embedded inside Rust tests without requiring a heavy multi-runtime Docker container.</li>
+<li><strong>Published, reproducible fidelity scores</strong>: Every release is scored against <code>aws-emulator-evaluation-suite</code> verified against real <code>us-west-2</code> AWS responses, and unimplemented APIs fail cleanly with <code>501 NotImplemented</code>.</li>
+<li><strong>Secure-by-default local posture</strong>: Loopback HTTPS + per-run SigV4 keys protect developer laptops from drive-by local requests.</li>
+</ul>
+</li>
+<li><strong>Where LocalStack still leads today</strong>:
+<ul>
+<li><strong>Complex data-plane execution &amp; IaC</strong>: If your local workflow requires executing containerized Lambda functions triggered by SQS/EventBridge, stateful local RDS Postgres instances, S3 Control operations, or full CloudFormation/CDK stack deployments with IAM policy enforcement, LocalStack Pro has years of specialized runtime integrations.</li>
+</ul>
+</li>
+</ul>
+<h4 id="2-aws-emulator-vs-moto">2. AWS Emulator vs. Moto</h4>
+<ul>
+<li><strong>Where AWS Emulator wins</strong>:
+<ul>
+<li><strong>Language-agnostic out of the box</strong>: Because AWS Emulator is a native HTTPS server speaking real AWS wire protocols, the exact same binary tests Python, TypeScript, Go, Java, Rust, .NET, and shell scripts.</li>
+<li><strong>Wire-level &amp; TLS realism</strong>: Moto primarily intercepts <code>botocore</code> calls in memory inside Python; AWS Emulator tests the full HTTP serialization, SigV4 signing, host-prefix behavior, and TLS configuration of your SDK.</li>
+<li><strong>Rust native embedded mode</strong>: <code>aws-emulator-embedded</code> brings Moto-style zero-network in-process isolation to the Rust ecosystem.</li>
+</ul>
+</li>
+<li><strong>Where Moto is still handy</strong>:
+<ul>
+<li>Pure Python unit tests on macOS/Windows where you don't want to run Docker and just want a quick <code>@mock_aws</code> decorator around a <code>boto3</code> function.</li>
+</ul>
+</li>
+</ul>
+<h4 id="3-aws-emulator-vs-dynamodb-local-s3mock-minio">3. AWS Emulator vs. DynamoDB Local / S3Mock / MinIO</h4>
+<ul>
+<li>Stitching together <code>amazon/dynamodb-local</code> on port <code>8000</code>, <code>minio</code> on port <code>9000</code>, and <code>stepfunctions-local</code> on port <code>8083</code> forces you to override a different <code>endpoint_url</code> per service client in your application code.</li>
+<li><strong>AWS Emulator</strong> serves all emulated services on a single <code>AWS_ENDPOINT_URL</code> (<code>https://127.0.0.1:9297</code>), so your application code stays completely untouched.</li>
+</ul>
+<h2 id="7-important-limitations-best-practices">7. Important Limitations &amp; Best Practices</h2>
+<p>AWS Emulator is purpose-built for <strong>building, local testing, CI integration testing, and AI-assisted prototyping</strong>. Keep the following constraints in mind:</p>
+<ol>
+<li><strong>Never Use AWS Emulator to Test Security or IAM Policies</strong>:
+The emulator <strong>never denies a request signed with its own run key</strong>, and it does not evaluate IAM policies, permission boundaries, S3 bucket policies, or KMS key policies the way real AWS does. Always validate IAM and security controls in a real AWS environment before production.</li>
+<li><strong>One Account (<code>000000000000</code>) and One Region per Instance</strong>:
+While the emulator accepts any Region in requests, it does not partition resources cleanly across accounts or Regions (and its behavior is verified against <code>us-west-2</code>, or <code>us-east-1</code> for global services).
+<ul>
+<li><em>Best Practice</em>: Use a single Region (<code>us-east-1</code> or <code>us-west-2</code>) per emulator. If you need to test multi-region behavior, launch two emulator processes on separate ports (<code>aws-emulator -p 9297</code> and <code>aws-emulator -p 9300</code>).</li>
+</ul>
+</li>
+<li><strong>In-Memory Ephemeral State Only</strong>:
+There is no persistence to disk and no admin reset endpoint. To reset state between test suites, simply stop and restart the emulator process (or use <code>--idle-timeout</code>).</li>
+<li><strong>Amazon S3 Control Is Not Supported</strong>:
+AWS SDKs always prepend the account ID to the hostname for S3 Control requests (e.g., <code>000000000000.127.0.0.1</code>), which cannot be disabled via configuration and therefore cannot reach the emulator.</li>
+<li><strong>Managing Telemetry</strong>:
+By default, the emulator sends anonymous aggregate metrics (operation counts, error categories, and startup/memory ranges, never payloads, ARNs, credentials, or free text). You can opt out at any time via:
+<ul>
+<li>CLI flag: <code>aws-emulator --telemetry off</code> (or <code>-t off</code>)</li>
+<li>Environment variable: <code>export EMULATOR_TELEMETRY=off</code></li>
+<li>Config file (<code>~/.aws/emulator/config.toml</code>):<pre data-lang="toml" class="language-toml "><code class="language-toml" data-lang="toml">[telemetry]
+enabled = false
+</code></pre>
+</li>
+<li>Rust Embedded API: <code>EmbeddedOptions::default().telemetry(Telemetry::Off)</code></li>
+</ul>
+</li>
+</ol>
+<h2 id="8-conclusion-resources">8. Conclusion &amp; Resources</h2>
+<p><strong>AWS Emulator</strong> fills a long-standing gap in the AWS developer experience: an official, fast, zero-cost, open-source local API emulator backed by continuous AI-driven updates and transparent fidelity testing. Whether you are running integration tests in CI without cloud credentials, writing parallel Rust tests in memory, or building new cloud features locally with an AI coding agent, AWS Emulator lets you iterate at local speed with production-grade API validation.</p>
+<h3 id="official-links">Official Links</h3>
+<ul>
+<li><strong>Companion Examples Repository</strong>: <a rel="nofollow noreferrer" href="https://github.com/aadityapageni/aws-simulator-test">github.com/aadityapageni/aws-simulator-test</a></li>
+<li><strong>Documentation</strong>: <a rel="nofollow noreferrer" href="https://docs.aws.amazon.com/emulator/latest/userguide/what-is-service.html">AWS Emulator User Guide</a></li>
+<li><strong>Source Code</strong>: <a rel="nofollow noreferrer" href="https://github.com/aws/aws-emulator">github.com/aws/aws-emulator</a></li>
+<li><strong>Releases &amp; Fidelity Scores</strong>: <a rel="nofollow noreferrer" href="https://github.com/aws/aws-emulator/releases">github.com/aws/aws-emulator/releases</a></li>
+<li><strong>Fidelity Evaluation Suite</strong>: <a rel="nofollow noreferrer" href="https://github.com/aws/aws-emulator-evaluation-suite">github.com/aws/aws-emulator-evaluation-suite</a></li>
+<li><strong>Agent Toolkit Skill Guide</strong>: <a rel="nofollow noreferrer" href="https://docs.aws.amazon.com/agent-toolkit/latest/userguide/aws-cli.html">Managing skills with the AWS CLI</a></li>
+</ul>
+
+      </article>
+
+      
+      
+      <div class="reaction right" data-endpoint="https:&#x2F;&#x2F;wwwaadityapageni.com.np&#x2F;api&#x2F;reaction"></div>
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2026 Aaditya Pageni
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  const isDark = document.body.classList.contains('dark');
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: isDark ? 'dark' : 'default',
+    themeVariables: {
+      primaryTextColor: isDark ? '#e5e7eb' : '#1f2937',
+      lineColor: isDark ? '#9ca3af' : '#4b5563',
+      tertiaryColor: isDark ? '#111827' : '#f3f4f6'
+    }
+  });
+</script>
+
+
+  <script src="https://www.aadityapageni.com.np/js/main.js"></script>
+</body>
+
+</html>
