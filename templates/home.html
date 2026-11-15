@@ -102,7 +102,12 @@
     </section>
     {% set notes_section = get_section(path="notes/_index.md") %}
     {% if notes_section.pages %}
-    <section class="layout-list" style="margin-top: 2.5em;">
+    <section id="links" style="margin: 2em 0 1.5em;">
+      <div id="left">
+        <a href="{{ get_url(path='/notes') }}" class="instant">notes</a>
+      </div>
+    </section>
+    <section class="layout-list">
       <div class="post-list">
         {% for note in notes_section.pages | slice(end=section.extra.recent_max) %}
         <a class="post instant {% if note.extra.featured %}featured{% endif %}" href="{{ note.permalink }}">
@@ -113,7 +118,7 @@
         {% endfor %}
       </div>
       <div class="read-more">
-        <a class="instant" href="/notes">{{ section.extra.recent_more_text }}</a>
+        <a class="instant" href="{{ get_url(path='/notes') }}">{{ section.extra.recent_more_text }}</a>
       </div>
     </section>
     {% endif %}
